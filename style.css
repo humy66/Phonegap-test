@@ -1,0 +1,46 @@
+.notification-cls-0 {
+    background-color:pink;
+}
+
+
+.notification-cls-1 {
+    background-color:lightgreen;
+}
+
+
+.center {
+    text-align:center;
+}
+
+.right {
+    text-align:right;
+}
+
+
+.bold {
+    font-weight:bold;
+}
+
+
+.smaller {
+    font-size:smaller;
+    
+}
+
+
+.x-menu {
+    padding: 0.7em;
+    background-image: none!important;
+    background-color: white!important;
+}
+
+
+.positive {
+    background-color : green;
+    color : white;
+}
+
+.negative {
+    background-color : red;
+    color : white;
+}
