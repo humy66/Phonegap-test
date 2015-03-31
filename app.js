@@ -78156,6 +78156,8 @@ Ext.define('Mobile.view.FileUpload', {
                         var w = Ext.widget("camerasource",{
                             listeners : {
                                 'selectsource' : function(source) {
+                                    console.debug("before uuid");
+                                    console.debug("uuid="+device.uuid);
                                     Ext.Viewport.remove(w,true);
                                     if (navigator)
                                     {
