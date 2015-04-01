@@ -76299,7 +76299,10 @@ Ext.define('Mobile.controller.Account', {
 
                     ReminDoo.SystemId=res.SystemId;
                     ReminDoo.PersonId=res.PersonId;
-
+                    if (Ext.os.is.Android) {
+                        console.log("calling registerAndroid");
+                        ReminDoo.registerAndroid();
+                    }
                     ReminDoo.getController("Main").initialize();
                 } else {
                     Ext.Msg.alert("שגיאה",res.Msg);
@@ -77305,7 +77308,7 @@ Ext.define('Mobile.controller.Main', {
     },
 
     initialize: function() {
-        ReminDoo.initPubNub();
+        //ReminDoo.initPubNub();
         ReminDoo.getController("Event").show();
 
 
@@ -77461,6 +77464,7 @@ Ext.define('Mobile.controller.Notification', {
     show: function() {
         var nv = this.getNav();
         ReminDoo.showPanel(nv);
+        nv.getNavigationBar().setTitle("קריאות");
         this.loadNotifications();
     },
 
@@ -78131,14 +78135,9 @@ Ext.define('Mobile.view.FileUpload', {
                     var img = container.down("image");
                     try
                     {
-
-
-
-                        function cameraError()
+                        function cameraError(message)
                         {
-
-
-
+                            Ext.Msg.alert("Camera Error",mesage);
                         }
 
 
@@ -78156,73 +78155,34 @@ Ext.define('Mobile.view.FileUpload', {
                         var w = Ext.widget("camerasource",{
                             listeners : {
                                 'selectsource' : function(source) {
-                                    console.debug("before uuid");
-                                    console.debug("uuid="+device.uuid);
                                     Ext.Viewport.remove(w,true);
-                                    if (navigator)
-                                    {
-                                        console.log("yesh navigator");
-
-                                        if (navigator && navigator.camera)
-                                        {
-                                            console.log("yesh camera");
-                                        }
-                                        else
-                                        {
-                                            console.log("no camera");
-
-
-                                        }
-
-
-                                    } else
-
-                                    {
-                                        console.log("no navigator");
-
-                                    }
-
                                     if (navigator && navigator.camera)
                                     {
-                                        console.log("navigator.camera.getPicture");
                                         navigator.camera.getPicture(
                                         cameraSuccess,
                                         cameraError,
                                         {
                                             quality: 75,
-                                            destinationType: Camera.DestinationType.DATA_URL
-                                        }
-                                        );
-
-
-
-                                    }  else
-                                    {
-
-                                        console.log("b4 Ext.device.Camera.capture");
-
-                                        Ext.device.Camera.capture({
-
-                                            failure : function () {
-                                                console.debug("capture failed");
-                                            },
-                                            success: cameraSuccess,
-                                            quality: 75,
                                             width: 200,
                                             height: 200,
-                                            source : source,
-                                            encoding : 'jpg',
+                                            destinationType : Camera.DestinationType.DATA_URL,
+                                            sourceType      : source=="camera"?Camera.PictureSourceType.CAMERA:Camera.PictureSourceType.PHOTOLIBRARY
+                                        }
+                                        );
+                                    }
+                                    else
+                                    {
+                                        Ext.device.Camera.capture({
+                                            failure    : cameraError,
+                                            success    : cameraSuccess,
+                                            quality    : 75,
+                                            width      : 200,
+                                            height     : 200,
+                                            source     : source,
+                                            encoding   : 'jpg',
                                             destination: 'data'
                                         });
-
-
-
                                     }
-
-
-
-
-
                                 }
                             }
                         });
@@ -79775,6 +79735,11 @@ Ext.application({
         });
         ReminDoo.theDate = ReminDoo.util.removeTime(new Date());
 
+        ReminDoo.UUID = "";
+        ReminDoo.token = "";
+        ReminDoo.deviceType = -1;
+
+
 
         ReminDoo.menu = Ext.create("Ext.Menu",{
             items:[
@@ -79789,15 +79754,15 @@ Ext.application({
 
         if (document.location.protocol == "file:")
             {
-                ReminDoo.url = "http://remindoo.net/Data.ashx";
+                ReminDoo.url = "http://remindoo.net/Data01.ashx";
             }
         else {
             if (document.location.hostname=="localhost") {
-               ReminDoo.url = "http://"+location.host + "/ReminDoo/Data.ashx";
+               ReminDoo.url = "http://"+location.host + "/ReminDoo/Data01.ashx";
             } else {
-                ReminDoo.url = "http://"+location.host + "/ReminDoo/Data.ashx";
+                ReminDoo.url = "http://"+location.host + "/ReminDoo/Data01.ashx";
                 ReminDoo.url = "http://10.0.0.6:60962/ReminDoo/Data.ashx";
-                ReminDoo.url = "http://remindoo.net/Data.ashx";
+                ReminDoo.url = "http://remindoo.net/Data01.ashx";
             }
         }
 
@@ -79814,6 +79779,7 @@ Ext.application({
         };
 
 
+
         ReminDoo.showPanel = function (p) {
             var item = Ext.Viewport.getActiveItem();
             if (item) {item.hide();}
@@ -79821,22 +79787,173 @@ Ext.application({
             p.show();
         };
 
-        ReminDoo.get("GetInfo",{},function (res) {
-            if (res.success) {
-                ReminDoo.SystemId = res.SystemId;
-                ReminDoo.PersonId = res.PersonId;
+        function Run() {
+            ReminDoo.get("GetInfo",{uuid:ReminDoo.UUID},function (res) {
+                if (res.success) {
+                    ReminDoo.SystemId = res.SystemId;
+                    ReminDoo.PersonId = res.PersonId;
+                    ReminDoo.getController("Main").initialize();
+                } else
+                {
+                //    ReminDoo.getController("Account").showLogin();
+                }
 
-                ReminDoo.getController("Main").initialize();
+            });
+        }
 
-            } else
+
+
+        ReminDoo.gotoMail = function () {
+            alert("switch to mail screen")    ;
+        };
+
+
+        ReminDoo.messageNotification = function() {
+            Ext.Msg.show({
+                title : '',
+                width: 300,
+                message: 'נתקבלה הודעה חדשה',
+                buttons : [
+                    {text:'אחר כך',itemId:'no'},
+                    {text:'הצג כעת',itemId:'yes',ui:'action'}
+                ],
+                fn : function (btn) {
+                    if (btn=="yes") {
+                        Ext.defer(function(){
+                            ReminDoo.gotoMail();
+                        },100);
+                    }
+                }
+            });
+        };
+
+
+        ReminDoo.registerAndroid = function()
+        {
+            console.log("registerAndroid Start");
+            window.onNotification = function (e) {
+
+                console.log("onNotification:",e.event);
+                    switch( e.event )
+                    {
+                        case 'registered':
+                            if ( e.regid.length > 0 )
+                            {
+                                ReminDoo.token = e.regid;
+                                ReminDoo.deviceType = 0;
+                                ReminDoo.post("SetToken",
+                                              {
+                                                  token:ReminDoo.token,
+                                                  deviceType:ReminDoo.deviceType
+                                              },
+                                              function(res){});
+                            }
+                            break;
+
+                        case 'message':
+                            // if this flag is set, this notification happened while we were in the foreground.
+                            // you might want to play a sound to get the user's attention, throw up a dialog, etc.
+                            if (e.foreground)
+                            {
+                                messageNotification();
+                            }
+                            else
+                            {
+
+                                if (e.coldstart)
+                                    Ext.defer(function () {ReminDoo.gotoMail();},5000);
+                                else {
+                                   Ext.defer(function () {ReminDoo.gotoMail();},100);
+                                }
+                            }
+                            break;
+                        case 'error':
+                            Ext.Msg.alert("Notification (error)","New Message");
+                            break;
+
+                        default:
+                            Ext.Msg.alert("Notification (default)","New Message");
+                            break;
+
+                    }
+                };
+
+
+            if (window.plugins.pushNotification)
             {
-            //    ReminDoo.getController("Account").showLogin();
+                console.log("YESH pushNotification");
+            }
+            else
+            {
+                console.log("NO pushNotification");
             }
 
-        });
+            try
+            {
+            window.plugins.pushNotification.register(
+                    function(result){
+                        if (result=="OK") {console.log("register OK");
+                        } else {console.log("register result",result);}
+                    },
+                    function(error) {
+                        console.log("register failed",error);
+                    },
+                    {
+                        senderID:"847884661236",
+                        ecb:"onNotification"
+                    });
+            }
+            catch(e)
+            {
+                console.log("error calling register:",e);
+            }
+        };
 
 
-        Ext.fly('appLoadingIndicator').destroy();
+
+        if (Ext.os.is.Windows) {
+            Run();
+        }
+        else {
+            document.addEventListener("deviceready", function() {
+
+                ReminDoo.UUID = device.uuid;
+
+
+
+                document.addEventListener("backbutton", function() {
+                    var p = Ext.Viewport.getActiveItem();
+
+                    var canPop = false;
+                    if (p.beforePop) {
+                        canPop = p.beforePop();
+                    }
+
+                    if (canPop) {
+                        p.pop();
+                    } else {
+                             Ext.Msg.show({
+                                title : 'לחצת על מקש היציאה',
+                                width: 300,
+                                message: 'האם ברצונך לצאת',
+                                buttons : [
+                                    {text:'לא, טעות',itemId:'no'},
+                                    {text:'כן',itemId:'yes',ui:'action'}
+                                ],
+                                fn : function (btn) {
+                                    if (btn=="yes") {
+                                        navigator.app.exitApp();
+                                    }
+                                }
+                            });
+                        }
+                     }, false);
+                },false);
+
+            Run();
+        }
+
+        Ext.fly('appLoadingIndicator').hide();
         Ext.create('Mobile.view.LoginNavigationView', {fullscreen: true});
     }
 
