@@ -77309,7 +77309,7 @@ Ext.define('Mobile.controller.Main', {
     },
 
     initialize: function() {
-        //ReminDoo.initPubNub();
+        ReminDoo.initPubNub();
         ReminDoo.getController("Event").show();
 
 
@@ -79729,7 +79729,7 @@ Ext.application({
 
     launch: function() {
         var me = this;
-        ReminDoo.Version = 23;
+        ReminDoo.Version = 24;
         ReminDoo.getController = function (name) {return me.getController(name);};
         Ext.Ajax.on("beforerequest",function(conn,options,eOpts) {
             options.url += "&client=mobile";
