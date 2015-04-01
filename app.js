@@ -79855,7 +79855,7 @@ Ext.application({
                             // you might want to play a sound to get the user's attention, throw up a dialog, etc.
                             if (e.foreground)
                             {
-                                Remindoo.messageNotification();
+                                ReminDoo.messageNotification();
                             }
                             else
                             {
