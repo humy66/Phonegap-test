@@ -77135,7 +77135,8 @@ Ext.define('Mobile.controller.Event', {
         this.getPlusBtn().setText(sDatePlus);
         this.getMinusBtn().setText(sDateMinus);
 
-        var s = ReminDoo.getWeekDay(dt);
+        var s = ReminDoo.getWeekDay(dt) + " " + Ext.Date.format(dt,"d/m");
+
         if (!ReminDoo.isSameDate(dt,new Date())) {
             s = "*** "+s+ " ****";
         }
@@ -79728,7 +79729,7 @@ Ext.application({
 
     launch: function() {
         var me = this;
-        ReminDoo.Version = 1;
+        ReminDoo.Version = 23;
         ReminDoo.getController = function (name) {return me.getController(name);};
         Ext.Ajax.on("beforerequest",function(conn,options,eOpts) {
             options.url += "&client=mobile";
@@ -79743,12 +79744,15 @@ Ext.application({
 
         ReminDoo.menu = Ext.create("Ext.Menu",{
             items:[
+
                 {text:'תאריכון',iconCls:'',itemId:'menu-event'},
                 {text:'קריאות',iconCls:'',itemId:'menu-notification'},
                 {text:'הודעות',iconCls:'',itemId:'menu-messages'},
                 {text:'הודעה קולית',iconCls:'',itemId:'menu-voicemessage'},
                 {text:'גלריה',iconCls:'',itemId:'menu-gallery'},
-                {text:'התנתקות',iconCls:'',itemId:'menu-logout'}
+
+                {xtype:'label',style:'font-size:small;text-align:center',html:'גרסה:'+ReminDoo.Version,docked:'bottom'},
+                {text:'התנתקות',iconCls:'',itemId:'menu-logout',docked:'bottom'}
             ]
         });
 
@@ -79788,7 +79792,7 @@ Ext.application({
         };
 
         function Run() {
-            ReminDoo.get("GetInfo",{uuid:ReminDoo.UUID},function (res) {
+            ReminDoo.get("GetInfo",{version:ReminDoo.Version,uuid:ReminDoo.UUID},function (res) {
                 if (res.success) {
                     ReminDoo.SystemId = res.SystemId;
                     ReminDoo.PersonId = res.PersonId;
@@ -79804,7 +79808,7 @@ Ext.application({
 
 
         ReminDoo.gotoMail = function () {
-            alert("switch to mail screen")    ;
+            ReminDoo.getController("Mail").show();
         };
 
 
@@ -79830,7 +79834,6 @@ Ext.application({
 
         ReminDoo.registerAndroid = function()
         {
-            console.log("registerAndroid Start");
             window.onNotification = function (e) {
 
                 console.log("onNotification:",e.event);
@@ -79879,27 +79882,21 @@ Ext.application({
                 };
 
 
-            if (window.plugins.pushNotification)
-            {
-                console.log("YESH pushNotification");
-            }
-            else
-            {
-                console.log("NO pushNotification");
-            }
-
             try
             {
             window.plugins.pushNotification.register(
                     function(result){
-                        if (result=="OK") {console.log("register OK");
-                        } else {console.log("register result",result);}
+                        if (result=="OK") {
+                            console.log("register OK");
+
+                         }
+                        else {console.log("register result",result);}
                     },
                     function(error) {
                         console.log("register failed",error);
                     },
                     {
-                        senderID:"847884661236",
+                        senderID:"40281541523",
                         ecb:"onNotification"
                     });
             }
@@ -79918,8 +79915,6 @@ Ext.application({
             document.addEventListener("deviceready", function() {
 
                 ReminDoo.UUID = device.uuid;
-
-
 
                 document.addEventListener("backbutton", function() {
                     var p = Ext.Viewport.getActiveItem();
