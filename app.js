@@ -69333,7 +69333,7 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 26;
+        ReminDoo.Version = 27;
         ReminDoo.getController = function(name) {
             return me.getController(name);
         };
@@ -69439,6 +69439,7 @@ Ext.application({
                     for (var k in res) {
                         ReminDoo.D.add(k, res[k]);
                     }
+                    initMenu();
                     ReminDoo.get("GetInfo", {
                         version: ReminDoo.Version,
                         uuid: ReminDoo.UUID
@@ -69450,7 +69451,6 @@ Ext.application({
                             ReminDoo.ContactId = res.ContactId;
                             ReminDoo.Users = res.Users;
                             Ext.getStore("Users").setData(res.Users);
-                            initMenu();
                             ReminDoo.setUserName(ReminDoo.FullName);
                             ReminDoo.getController("Main").initialize();
                         } else {
@@ -69574,6 +69574,7 @@ Ext.application({
         } else {
             document.addEventListener("deviceready", function() {
                 ReminDoo.UUID = device.uuid;
+                alert("Verion=" + ReminDoo.Version + " uuid=" + ReminDoo.UUID);
                 document.addEventListener("backbutton", function() {
                     var p = Ext.Viewport.getActiveItem();
                     var canPop = false;
