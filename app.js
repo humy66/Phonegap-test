@@ -67468,7 +67468,7 @@ Ext.define('Mobile.controller.Event', {
         this.getEventNav().getNavigationBar().setTitle(s);
         console.log("loadEvents 4");
         this.getDatepicker().setValue(dt);
-        console.log("loadEvents 5");
+        console.log(dt);
         ReminDoo.get("GetPersonEvents", {
             Date: dt,
             fDate: dt,
@@ -67477,6 +67477,7 @@ Ext.define('Mobile.controller.Event', {
             console.log("loadEvents 6");
             ReminDoo.unMask();
             var a = [];
+            console.log(res);
             res.Table.forEach(function(r) {
                 a.push(r);
             });
@@ -69337,7 +69338,7 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 33;
+        ReminDoo.Version = 34;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
