@@ -617,7 +617,7 @@ ReminDoo.parseDate = function (s) {
 };
 
 ReminDoo.NotImplemented = function () {
-	Ext.Msg.alert("","תכונה זו  תמומש בגרסה עתידית");
+	Ext.Msg.alert("",ReminDoo.T("NotAciveOption"));
 
 
 

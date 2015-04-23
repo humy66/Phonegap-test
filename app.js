@@ -68669,7 +68669,7 @@ Ext.define('Mobile.controller.Gallery', {
         var nav = this.getGalleryNav();
         var p = this.getGalleryPanel();
         var values = p.getValues();
-        Ext.Msg.confirm("????? ?????", values.Description, function(btn) {
+        Ext.Msg.confirm(ReminDoo.T("ConfirmDelete"), values.Description, function(btn) {
             if (btn == "yes") {
                 ReminDoo.post("DeleteAd", {
                     IdRec: values.IdRec
@@ -69344,53 +69344,6 @@ Ext.application({
         ReminDoo.UUID = "2345678";
         ReminDoo.token = "";
         ReminDoo.deviceType = -1;
-        ReminDoo.menu = Ext.create("Ext.Menu", {
-            items: [
-                {
-                    text: 'Calendar',
-                    iconCls: '',
-                    itemId: 'menu-event'
-                },
-                {
-                    text: 'Alerts',
-                    iconCls: '',
-                    itemId: 'menu-notification'
-                },
-                {
-                    text: 'Messages',
-                    iconCls: '',
-                    itemId: 'menu-messages'
-                },
-                {
-                    text: 'VoiceMessage',
-                    iconCls: '',
-                    itemId: 'menu-voicemessage'
-                },
-                {
-                    text: 'Gallery',
-                    iconCls: '',
-                    itemId: 'menu-gallery'
-                },
-                {
-                    xtype: 'label',
-                    style: 'font-size:small;text-align:center',
-                    html: 'v:' + ReminDoo.Version,
-                    docked: 'bottom'
-                },
-                {
-                    text: 'LogOff',
-                    iconCls: '',
-                    itemId: 'menu-logout',
-                    docked: 'bottom'
-                },
-                {
-                    text: 'SwitchUser',
-                    iconCls: '',
-                    itemId: 'menu-switch-user',
-                    docked: 'bottom'
-                }
-            ]
-        });
         if (document.location.protocol == "file:") {
             ReminDoo.url = "http://remindoo.net/Data02.ashx";
         } else {
@@ -69402,10 +69355,6 @@ Ext.application({
                 ReminDoo.url = "http://remindoo.net/Data02.ashx";
             }
         }
-        Ext.Viewport.setMenu(ReminDoo.menu, {
-            side: 'left',
-            reveal: true
-        });
         ReminDoo.toggleMenu = function() {
             Ext.Viewport.toggleMenu('left');
         };
@@ -69424,6 +69373,65 @@ Ext.application({
             Ext.Viewport.setActiveItem(p);
             p.show();
         };
+        function initMenu() {
+            var items = [
+                    {
+                        text: 'Calendar',
+                        iconCls: '',
+                        itemId: 'menu-event'
+                    },
+                    {
+                        text: 'Alerts',
+                        iconCls: '',
+                        itemId: 'menu-notification'
+                    },
+                    {
+                        text: 'Messages',
+                        iconCls: '',
+                        itemId: 'menu-messages'
+                    },
+                    {
+                        text: 'VoiceMessage',
+                        iconCls: '',
+                        itemId: 'menu-voicemessage'
+                    },
+                    {
+                        text: 'Gallery',
+                        iconCls: '',
+                        itemId: 'menu-gallery'
+                    },
+                    {
+                        xtype: 'label',
+                        style: 'font-size:small;text-align:center',
+                        html: 'v:' + ReminDoo.Version,
+                        docked: 'bottom'
+                    },
+                    {
+                        text: 'LogOff',
+                        iconCls: '',
+                        itemId: 'menu-logout',
+                        docked: 'bottom'
+                    },
+                    {
+                        text: 'SwitchUser',
+                        iconCls: '',
+                        itemId: 'menu-switch-user',
+                        docked: 'bottom'
+                    }
+                ];
+            items.forEach(function(d) {
+                if ('text' in d) {
+                    d.text = ReminDoo.T(d.text);
+                }
+            });
+            ReminDoo.menu = Ext.create("Ext.Menu", {
+                items: items
+            });
+            Ext.Viewport.setMenu(ReminDoo.menu, {
+                side: 'left',
+                reveal: true
+            });
+        }
         function Run() {
             ReminDoo.mask();
             ReminDoo.get("GetTranslation", {}, function(res) {
@@ -69442,7 +69450,7 @@ Ext.application({
                             ReminDoo.ContactId = res.ContactId;
                             ReminDoo.Users = res.Users;
                             Ext.getStore("Users").setData(res.Users);
-                            ReminDoo.Translate(ReminDoo.menu);
+                            initMenu();
                             ReminDoo.setUserName(ReminDoo.FullName);
                             ReminDoo.getController("Main").initialize();
                         } else {
