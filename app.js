@@ -67477,7 +67477,7 @@ Ext.define('Mobile.controller.Event', {
             console.log("loadEvents 6");
             ReminDoo.unMask();
             var a = [];
-            console.log(res);
+            console.log(JSON.stringify(res));
             res.Table.forEach(function(r) {
                 a.push(r);
             });
@@ -69338,7 +69338,7 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 34;
+        ReminDoo.Version = 35;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
