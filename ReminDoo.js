@@ -102,7 +102,7 @@ ReminDoo.request = function (query,method,params,onSuccess,onFailure, onResume) 
             }
             catch (e)
             {
-                console.debug("exception:",e);
+                console.debug("exception:"+e);
                 if (onFailure) {onFailure(response,opts);}
             }
         },

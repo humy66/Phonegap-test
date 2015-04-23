@@ -67452,37 +67452,39 @@ Ext.define('Mobile.controller.Event', {
         nav.push(form);
     },
     loadEvents: function(dt) {
+        conosle.log("loadEvents 1");
         ReminDoo.mask();
         var l = this.getEventList();
+        conosle.log("loadEvents 2");
         var sDatePlus = Ext.Date.format(Ext.Date.add(dt, Ext.Date.DAY, 1), "d/m");
         var sDateMinus = Ext.Date.format(Ext.Date.add(dt, Ext.Date.DAY, -1), "d/m");
         this.getPlusBtn().setText(sDatePlus);
         this.getMinusBtn().setText(sDateMinus);
+        conosle.log("loadEvents 3");
         var s = ReminDoo.getWeekDay(dt) + " " + Ext.Date.format(dt, "d/m");
         if (!ReminDoo.isSameDate(dt, new Date())) {
             s = "*** " + s + " ****";
         }
         this.getEventNav().getNavigationBar().setTitle(s);
+        conosle.log("loadEvents 4");
         this.getDatepicker().setValue(dt);
+        conosle.log("loadEvents 5");
         ReminDoo.get("GetPersonEvents", {
             Date: dt,
             fDate: dt,
             tDate: dt
         }, function(res) {
+            conosle.log("loadEvents 6");
             ReminDoo.unMask();
-            //console.debug("res.Table",res.Table);
             var a = [];
             res.Table.forEach(function(r) {
                 a.push(r);
             });
-            //if (r.Hidden!="True") {a.push(r);}
+            conosle.log("loadEvents 7");
             Ext.getStore("Events").setData(a);
+            conosle.log("loadEvents 8");
         });
     },
-    //l.setData(res.Table);
-    //var r = l.getStore().getAt(1);
-    //console.debug("res",res);
-    //console.debug("r",r);
     setDate: function(delta) {
         ReminDoo.NotImplemented();
     },
@@ -69335,7 +69337,7 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 31;
+        ReminDoo.Version = 32;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
