@@ -1,6 +1,41 @@
 Ext.ns("ReminDoo");
 
 
+document.addEventListener("deviceready", function() {
+	console.log("deviceready");
+
+    ReminDoo.UUID = device.uuid;
+
+    document.addEventListener("backbutton", function() {
+        var p = Ext.Viewport.getActiveItem();
+        var canPop = false;
+        if (p.beforePop) {
+            canPop = p.beforePop();
+        }
+
+        if (canPop) {
+            p.pop();
+        } else {
+                 Ext.Msg.show({
+                    title : ReminDoo.T('ExitButtonPressed'),
+                    width: 300,
+                    message: ReminDoo.T('QuitProgram'),
+                    buttons : [
+                        {text:ReminDoo.T("No"),itemId:'no'},
+                        {text:ReminDoo.T("Yes"),itemId:'yes',ui:'action'}
+                    ],
+                    fn : function (btn) {
+                        if (btn=="yes") {
+                            navigator.app.exitApp();
+                        }
+                    }
+                });
+            }
+         }, false);
+},false);
+
+
+
 Ext.define('ReminDoo.Component', {
     requires : ["Ext.Component"],
     override: 'Ext.Component',

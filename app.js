@@ -69335,7 +69335,7 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 29;
+        ReminDoo.Version = 30;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
@@ -69577,48 +69577,9 @@ Ext.application({
                 console.log("error calling register:", e);
             }
         };
-        if (Ext.os.is.Windows) {
-            Run();
-        } else {
-            document.addEventListener("deviceready", function() {
-                ReminDoo.UUID = device.uuid;
-                alert("Verion=" + ReminDoo.Version + " uuid=" + ReminDoo.UUID);
-                document.addEventListener("backbutton", function() {
-                    var p = Ext.Viewport.getActiveItem();
-                    var canPop = false;
-                    if (p.beforePop) {
-                        canPop = p.beforePop();
-                    }
-                    if (canPop) {
-                        p.pop();
-                    } else {
-                        Ext.Msg.show({
-                            title: ReminDoo.T('ExitButtonPressed'),
-                            width: 300,
-                            message: ReminDoo.T('QuitProgram'),
-                            buttons: [
-                                {
-                                    text: ReminDoo.T("No"),
-                                    itemId: 'no'
-                                },
-                                {
-                                    text: ReminDoo.T("Yes"),
-                                    itemId: 'yes',
-                                    ui: 'action'
-                                }
-                            ],
-                            fn: function(btn) {
-                                if (btn == "yes") {
-                                    navigator.app.exitApp();
-                                }
-                            }
-                        });
-                    }
-                }, false);
-            }, false);
-            Run();
-        }
         Ext.fly('appLoadingIndicator').hide();
+        cosole.log("b4 Run");
+        Run();
         Ext.create('Mobile.view.Welcome', {
             fullscreen: true
         });
