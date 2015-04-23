@@ -69335,7 +69335,7 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 30;
+        ReminDoo.Version = 31;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
@@ -69578,7 +69578,7 @@ Ext.application({
             }
         };
         Ext.fly('appLoadingIndicator').hide();
-        cosole.log("b4 Run");
+        console.log("b4 Run");
         Run();
         Ext.create('Mobile.view.Welcome', {
             fullscreen: true
