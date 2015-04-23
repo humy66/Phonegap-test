@@ -67452,38 +67452,33 @@ Ext.define('Mobile.controller.Event', {
         nav.push(form);
     },
     loadEvents: function(dt) {
-        console.log("loadEvents 1");
         ReminDoo.mask();
         var l = this.getEventList();
-        console.log("loadEvents 2");
         var sDatePlus = Ext.Date.format(Ext.Date.add(dt, Ext.Date.DAY, 1), "d/m");
         var sDateMinus = Ext.Date.format(Ext.Date.add(dt, Ext.Date.DAY, -1), "d/m");
         this.getPlusBtn().setText(sDatePlus);
         this.getMinusBtn().setText(sDateMinus);
-        console.log("loadEvents 3");
         var s = ReminDoo.getWeekDay(dt) + " " + Ext.Date.format(dt, "d/m");
         if (!ReminDoo.isSameDate(dt, new Date())) {
             s = "*** " + s + " ****";
         }
         this.getEventNav().getNavigationBar().setTitle(s);
-        console.log("loadEvents 4");
         this.getDatepicker().setValue(dt);
-        console.log(dt);
         ReminDoo.get("GetPersonEvents", {
             Date: dt,
             fDate: dt,
             tDate: dt
         }, function(res) {
-            console.log("loadEvents 6");
             ReminDoo.unMask();
-            var a = [];
-            console.log(JSON.stringify(res));
-            res.Table.forEach(function(r) {
-                a.push(r);
-            });
-            console.log("loadEvents 7");
-            Ext.getStore("Events").setData(a);
-            console.log("loadEvents 8");
+            if (res.success) {
+                var a = [];
+                res.Table.forEach(function(r) {
+                    a.push(r);
+                });
+                Ext.getStore("Events").setData(a);
+            } else {
+                ReminDoo.alert("Error", "GetPersonEvents Failed");
+            }
         });
     },
     setDate: function(delta) {
@@ -69338,7 +69333,7 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 35;
+        ReminDoo.Version = 36;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
