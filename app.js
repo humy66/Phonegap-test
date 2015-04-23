@@ -69333,7 +69333,7 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 25;
+        ReminDoo.Version = 26;
         ReminDoo.getController = function(name) {
             return me.getController(name);
         };
