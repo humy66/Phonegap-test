@@ -66548,7 +66548,6 @@ Ext.define('Mobile.controller.Account', {
                 }
             });
         }
-        var p = this.getLoginnavigationview();
         Ext.Msg.confirm(ReminDoo.T("Confirm"), ReminDoo.T("LogOffWarning"), function(btn) {
             if (btn == "yes") {
                 fnLogout();
@@ -69333,7 +69332,8 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 27;
+        ReminDoo.Version = 28;
+        console.log("version:", ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
         };
