@@ -67452,37 +67452,37 @@ Ext.define('Mobile.controller.Event', {
         nav.push(form);
     },
     loadEvents: function(dt) {
-        conosle.log("loadEvents 1");
+        console.log("loadEvents 1");
         ReminDoo.mask();
         var l = this.getEventList();
-        conosle.log("loadEvents 2");
+        console.log("loadEvents 2");
         var sDatePlus = Ext.Date.format(Ext.Date.add(dt, Ext.Date.DAY, 1), "d/m");
         var sDateMinus = Ext.Date.format(Ext.Date.add(dt, Ext.Date.DAY, -1), "d/m");
         this.getPlusBtn().setText(sDatePlus);
         this.getMinusBtn().setText(sDateMinus);
-        conosle.log("loadEvents 3");
+        console.log("loadEvents 3");
         var s = ReminDoo.getWeekDay(dt) + " " + Ext.Date.format(dt, "d/m");
         if (!ReminDoo.isSameDate(dt, new Date())) {
             s = "*** " + s + " ****";
         }
         this.getEventNav().getNavigationBar().setTitle(s);
-        conosle.log("loadEvents 4");
+        console.log("loadEvents 4");
         this.getDatepicker().setValue(dt);
-        conosle.log("loadEvents 5");
+        console.log("loadEvents 5");
         ReminDoo.get("GetPersonEvents", {
             Date: dt,
             fDate: dt,
             tDate: dt
         }, function(res) {
-            conosle.log("loadEvents 6");
+            console.log("loadEvents 6");
             ReminDoo.unMask();
             var a = [];
             res.Table.forEach(function(r) {
                 a.push(r);
             });
-            conosle.log("loadEvents 7");
+            console.log("loadEvents 7");
             Ext.getStore("Events").setData(a);
-            conosle.log("loadEvents 8");
+            console.log("loadEvents 8");
         });
     },
     setDate: function(delta) {
@@ -69337,7 +69337,7 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 32;
+        ReminDoo.Version = 33;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
