@@ -66587,7 +66587,7 @@ Ext.define('Mobile.controller.Account', {
             });
         } else {
             me.execLogin({
-                qr: "b2145b60-6121-4e7f-b8b5-e25e72bedbac"
+                qr: "58a6b812-e988-45b2-95da-2cbe69de9254"
             });
         }
     },
@@ -67911,6 +67911,7 @@ Ext.define('Mobile.view.VoiceMailNav', {
         items: [
             {
                 xtype: 'panel',
+                title: 'VoiceMail',
                 itemId: 'voice-mail-dialer',
                 layout: 'vbox',
                 items: [
@@ -68268,6 +68269,7 @@ Ext.define('Mobile.view.GalleryNav', {
         items: [
             {
                 xtype: 'panel',
+                title: 'Gallery',
                 itemId: 'mypanel3',
                 layout: 'vbox',
                 scrollable: 'vertical',
@@ -68768,8 +68770,8 @@ Ext.define('Mobile.view.MailNav', {
                                     '    ',
                                     '    <div>',
                                     '        <div style="font-weight:bold;font-size:smaller;display:inline;">{ts:date("H:i d/m ")} {FirstName} {LastName}</div>',
-                                    '        <tpl if="isReceive==\'0\'"><div style=\'font-size:small;float:left;display:inline\'>??? ?????</div></tpl>',
-                                    '        <tpl if="isReceive==\'1\'"><div style=\'font-size:small;float:left;display:inline\'>?????</div></tpl>',
+                                    '        <tpl if="isReceive==\'0\'"><div style=\'font-size:small;float:left;display:inline\'>{[ReminDoo.T(\'unRead\')]}</div></tpl>',
+                                    '        <tpl if="isReceive==\'1\'"><div style=\'font-size:small;float:left;display:inline\'>{[ReminDoo.T(\'wasRead\')]}</div></tpl>',
                                     '    </div>',
                                     '    <div>{Body}</div>',
                                     '    ',
@@ -68788,7 +68790,8 @@ Ext.define('Mobile.view.MailNav', {
                     {
                         fn: function(component, eOpts) {
                             ReminDoo.Translate(component);
-                            component.getTabBar().getAt(1).setTitle(ReminDoo.T("Messages"));
+                            component.getTabBar().getAt(0).setTitle(ReminDoo.T("InBox"));
+                            component.getTabBar().getAt(1).setTitle(ReminDoo.T("OutBox"));
                         },
                         event: 'initialize'
                     }
@@ -69332,8 +69335,8 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 28;
-        console.log("version:", ReminDoo.Version);
+        ReminDoo.Version = 29;
+        console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
         };
@@ -69462,6 +69465,11 @@ Ext.application({
         }
         ReminDoo.D = new Ext.util.MixedCollection();
         ReminDoo.Translate = function(c) {
+            var tb = c.down("titlebar");
+            if (tb) {
+                var t = tb.getTitle();
+                tb.setTitle(ReminDoo.T(t));
+            }
             var buttons = c.query("button");
             Ext.each(buttons, function(button) {
                 var t = button.getText();
