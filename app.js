@@ -69333,7 +69333,7 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 24;
+        ReminDoo.Version = 25;
         ReminDoo.getController = function(name) {
             return me.getController(name);
         };
@@ -69584,16 +69584,16 @@ Ext.application({
                         p.pop();
                     } else {
                         Ext.Msg.show({
-                            title: '???? ?? ??? ??????',
+                            title: ReminDoo.T('ExitButtonPressed'),
                             width: 300,
-                            message: '??? ?????? ????',
+                            message: ReminDoo.T('QuitProgram'),
                             buttons: [
                                 {
-                                    text: '??, ????',
+                                    text: ReminDoo.T("No"),
                                     itemId: 'no'
                                 },
                                 {
-                                    text: '??',
+                                    text: ReminDoo.T("Yes"),
                                     itemId: 'yes',
                                     ui: 'action'
                                 }
