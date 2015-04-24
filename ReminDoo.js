@@ -713,7 +713,7 @@ ReminDoo.initPubNub = function ()  {
 	  			console.debug("message:"+m.query);
 				Ext.defer(
 					function() {
-						if (m.query=="PationePing") {
+						if (m.query=="PatientPing") {
 							ReminDoo.PatientPingTask.delay(1000*60*5);
 						}
 						if (m.query=="SetNotification") {

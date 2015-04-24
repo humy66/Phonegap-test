@@ -66548,12 +66548,40 @@ Ext.define('Mobile.controller.Account', {
                 }
             });
         }
-        Ext.Msg.confirm(ReminDoo.T("Confirm"), ReminDoo.T("LogOffWarning"), function(btn) {
-            if (btn == "yes") {
-                fnLogout();
+        Ext.Msg.show({
+            title: ReminDoo.T("Confirm"),
+            message: ReminDoo.T("LogOffWarning"),
+            width: 300,
+            buttons: [
+                {
+                    text: ReminDoo.T("Yes"),
+                    itemId: 'yes',
+                    ui: 'action'
+                },
+                {
+                    text: ReminDoo.T("No"),
+                    itemId: 'no'
+                }
+            ],
+            fn: function(btn) {
+                if (btn == "yes") {
+                    fnLogout();
+                }
             }
         });
     },
+    /*
+        Ext.Msg.confirm(
+                      ReminDoo.T("Confirm"),
+                      ReminDoo.T("LogOffWarning"),
+                      function(btn) {
+                          if (btn=="yes")
+                          {
+                              fnLogout();
+                          }
+                      }
+                 );
+        */
     onScanqrTap: function(button, e, eOpts) {
         var me = this;
         function doRegister(qr) {
@@ -66906,6 +66934,14 @@ Ext.define('Mobile.view.EventNav', {
                     xtype: 'button',
                     itemId: 'menu-button',
                     iconCls: 'list'
+                },
+                {
+                    xtype: 'button',
+                    align: 'right',
+                    itemId: 'add',
+                    ui: 'action',
+                    iconCls: 'pen',
+                    text: ''
                 }
             ]
         },
@@ -66946,7 +66982,7 @@ Ext.define('Mobile.view.EventNav', {
                         store: 'Events'
                     },
                     {
-                        xtype: 'container',
+                        xtype: 'toolbar',
                         layout: {
                             type: 'hbox',
                             align: 'center',
@@ -66982,15 +67018,7 @@ Ext.define('Mobile.view.EventNav', {
                             {
                                 xtype: 'button',
                                 itemId: 'plus-btn',
-                                ui: 'forward',
-                                text: '+'
-                            },
-                            {
-                                xtype: 'button',
-                                itemId: 'add',
-                                ui: 'action',
-                                iconCls: 'add',
-                                text: ''
+                                ui: 'forward'
                             }
                         ]
                     },
@@ -67021,9 +67049,16 @@ Ext.define('Mobile.view.EventNav', {
     },
     onInitialize: function(component, eOpts) {
         ReminDoo.Translate(component);
+    },
+    //component.getTabBar().getAt(01).setTitle(ReminDoo.T("Messages"));
+    onPop: function() {
+        this.down("#add").show();
+        ReminDoo.getController("Event").loadEvents();
+    },
+    onPush: function() {
+        this.down("#add").hide();
     }
 });
-//component.getTabBar().getAt(01).setTitle(ReminDoo.T("Messages"));
 
 /*
  * File: app/view/NewEventForm.js
@@ -67452,6 +67487,11 @@ Ext.define('Mobile.controller.Event', {
         nav.push(form);
     },
     loadEvents: function(dt) {
+        if (dt) {
+            this.theDate = dt;
+        } else {
+            dt = this.theDate;
+        }
         ReminDoo.mask();
         var l = this.getEventList();
         var sDatePlus = Ext.Date.format(Ext.Date.add(dt, Ext.Date.DAY, 1), "d/m");
@@ -67769,6 +67809,7 @@ Ext.define('Mobile.view.VoiceMailListPanel', {
                 xtype: 'list',
                 flex: 1,
                 itemId: 'voice-mail-list',
+                emptyText: 'emptyText',
                 itemTpl: [
                     '<div dir=rtl>',
                     '    <div style="font-size:smaller">{t}</div>',
@@ -68146,11 +68187,11 @@ Ext.define('Mobile.controller.VoiceMail', {
                     if (r.NeedConfirmation == "True") {
                         status += ",";
                         if (r.Confirmation == "False") {
-                            status += "<span class='negative'>" + ReinDoo.T("NegativeResponse") + "<span>";
+                            status += "<span class='negative'>" + ReminDoo.T("NegativeResponse") + "<span>";
                         } else if (r.Confirmation == "True") {
-                            status += "<span class='positive'>" + ReinDoo.T("PositiveResponse") + "<span>";
+                            status += "<span class='positive'>" + ReminDoo.T("PositiveResponse") + "<span>";
                         } else {
-                            status += ReinDoo.T("notYetResponse");
+                            status += ReminDoo.T("notYetResponse");
                         }
                     }
                     a.push({
@@ -68165,6 +68206,7 @@ Ext.define('Mobile.controller.VoiceMail', {
                 if (!Ext.isEmpty(store)) {
                     store.removeAll();
                 }
+                //store.setData(a);
                 list.setData(a);
             }
         });
@@ -68261,6 +68303,12 @@ Ext.define('Mobile.view.GalleryNav', {
                     itemId: 'menu-button',
                     iconCls: 'list',
                     text: ''
+                },
+                {
+                    xtype: 'button',
+                    align: 'right',
+                    itemId: 'button-new',
+                    iconCls: 'pen'
                 }
             ]
         },
@@ -68294,11 +68342,6 @@ Ext.define('Mobile.view.GalleryNav', {
                                 xtype: 'button',
                                 itemId: 'button-refresh',
                                 text: 'Refresh'
-                            },
-                            {
-                                xtype: 'button',
-                                itemId: 'button-new',
-                                text: 'New'
                             }
                         ]
                     }
@@ -68313,6 +68356,12 @@ Ext.define('Mobile.view.GalleryNav', {
                 ]
             }
         ]
+    },
+    onPush: function() {
+        this.down("#button-new").hide();
+    },
+    onPop: function() {
+        this.down("#button-new").show();
     }
 });
 
@@ -68348,7 +68397,8 @@ Ext.define('Mobile.view.FileUpload', {
                         },
                         itemId: 'trash',
                         ui: 'plain',
-                        iconCls: 'delete',
+                        iconAlign: 'top',
+                        iconCls: 'remove-circle',
                         listeners: [
                             {
                                 fn: function(component, eOpts) {
@@ -68503,7 +68553,7 @@ Ext.define('Mobile.view.GalleryPanel', {
                     {
                         xtype: 'button',
                         itemId: 'button-gallery-delete',
-                        iconCls: 'delete',
+                        iconCls: 'trash',
                         text: 'Delete'
                     },
                     {
@@ -69156,9 +69206,15 @@ Ext.define('Mobile.controller.Navigation', {
     onNavigationviewPush: function(navigationview, view, eOpts) {
         ReminDoo.Translate(navigationview);
         ReminDoo.Translate(view);
+        if (navigationview.onPush) {
+            navigationview.onPush();
+        }
     },
     onNavigationviewPop: function(navigationview, view, eOpts) {
         ReminDoo.Translate(navigationview);
+        if (navigationview.onPop) {
+            navigationview.onPop();
+        }
     }
 });
 
@@ -69333,7 +69389,7 @@ Ext.application({
     name: 'Mobile',
     launch: function() {
         var me = this;
-        ReminDoo.Version = 37;
+        ReminDoo.Version = 38;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
@@ -69378,27 +69434,27 @@ Ext.application({
             var items = [
                     {
                         text: 'Calendar',
-                        iconCls: '',
+                        iconCls: 'calendar',
                         itemId: 'menu-event'
                     },
                     {
                         text: 'Alerts',
-                        iconCls: '',
+                        iconCls: 'alert',
                         itemId: 'menu-notification'
                     },
                     {
                         text: 'Messages',
-                        iconCls: '',
+                        iconCls: 'message',
                         itemId: 'menu-messages'
                     },
                     {
                         text: 'VoiceMessage',
-                        iconCls: '',
+                        iconCls: 'audio',
                         itemId: 'menu-voicemessage'
                     },
                     {
                         text: 'Gallery',
-                        iconCls: '',
+                        iconCls: 'gallery',
                         itemId: 'menu-gallery'
                     },
                     {
@@ -69409,13 +69465,13 @@ Ext.application({
                     },
                     {
                         text: 'LogOff',
-                        iconCls: '',
+                        iconCls: 'logoff',
                         itemId: 'menu-logout',
                         docked: 'bottom'
                     },
                     {
                         text: 'SwitchUser',
-                        iconCls: '',
+                        iconCls: 'switch',
                         itemId: 'menu-switch-user',
                         docked: 'bottom'
                     }
@@ -69423,6 +69479,8 @@ Ext.application({
             items.forEach(function(d) {
                 if ('text' in d) {
                     d.text = ReminDoo.T(d.text);
+                    d.ui = 'menu';
+                    d.iconAlign = 'right';
                 }
             });
             ReminDoo.menu = Ext.create("Ext.Menu", {
