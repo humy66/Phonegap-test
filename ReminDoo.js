@@ -1,15 +1,10 @@
-function _d26e8f4967e8545f69c9c65571e0ec56b3a1fdf0(){};function ReminDooInit() 
+function _9f12ebd7a0821c094d8cda6ae8ef6501cc1e106b(){};function ReminDooInit() 
 {
 
 
 
 
-document.addEventListener("deviceready", function() {
-	console.log("deviceready");
-
-    ReminDoo.UUID = device.uuid;
-
-    document.addEventListener("backbutton", function() {
+document.addEventListener("backbutton", function() {
         var p = Ext.Viewport.getActiveItem();
         var canPop = false;
         if (p.beforePop) {
@@ -35,7 +30,6 @@ document.addEventListener("deviceready", function() {
                 });
             }
          }, false);
-},false);
 
 
 
