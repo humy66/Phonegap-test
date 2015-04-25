@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget 
+    id="client.mobile.ReminDoo"
+    version="1.1.1" 
+    xmlns="http://www.w3.org/ns/widgets" 
+    xmlns:gap="http://phonegap.com/ns/1.0">
+    
+    <name>ReminDooMobile</name>
+    <description>ReminDoo Client</description>
+    
+     
+    <feature name="http://api.phonegap.com/1.0/device" />
+    <feature name="http://api.phonegap.com/1.0/camera" />
+    <feature name="http://api.phonegap.com/1.0/media" />
+    <feature name="http://api.phonegap.com/1.0/file" />
+    <feature name="http://api.phonegap.com/1.0/network" />
+
+    
+    <plugin name="Camera" value="org.apache.cordova.CameraLauncher" />
+
+    <preference name="show-splash-screen-spinner" value="false" />
+    <preference name="auto-hide-splash-screen" value="false" />
+    <preference name="AutoHideSplashScreen" value="false" />
+
+    <preference name="permissions" value="none" />
+    <preference name="orientation" value="default" />
+    <preference name="target-device" value="universal" />
+    <preference name="fullscreen" value="true" />
+    <preference name="webviewbounce" value="true" />
+    <preference name="prerendered-icon" value="true" />
+    <preference name="stay-in-webview" value="false" />
+    <preference name="ios-statusbarstyle" value="black-opaque" />
+    <preference name="detect-data-types" value="true" />
+    <preference name="exit-on-suspend" value="false" />
+    <preference name="disable-cursor" value="false" />
+    <preference name="android-minSdkVersion" value="7" />
+    <preference name="android-installLocation" value="auto" />
+
+    <preference name="SplashScreen" value="screen" />
+    <preference name="SplashScreenDelay" value="10000" />
+
+
+
+    <icon src="icon.png" gap:role="default"/>
+    
+    
+    <icon gap:platform="blackberry" src="res/icon/blackberry/icon-80.png" />
+    <icon gap:platform="blackberry" gap:state="hover" src="res/icon/blackberry/icon-80.png" />
+    
+
+    <icon gap:platform="ios" height="57" src="resources/icons/57X57.png" width="57" />
+    <icon gap:platform="ios" height="72" src="resources/icons/72X72.png" width="72" />
+    <icon gap:platform="ios" height="114" src="resources/icons/114X114.png" width="114" />
+    <icon gap:platform="ios" height="144" src="resources/icons/144X144.png" width="144" />
+
+    <gap:splash gap:platform="ios" height="480" src="resources/startup/Default.png" width="320" />
+    <gap:splash gap:platform="ios" height="960" src="resources/startup/Default@2X.png" width="640" />
+    <gap:splash gap:platform="ios" height="1136" src="resources/startup/Default-568h@2X.png" width="640" />
+    <gap:splash gap:platform="ios" height="1024" src="resources/startup/Default-iOS7-Portrait.png" width="768" />
+    <gap:splash gap:platform="ios" height="768" src="resources/startup/Default-iOS7-Landscape.png" width="1024" />
+
+
+
+
+    
+    <icon gap:platform="webos" src="res/icon/webos/icon-64.png" />
+    <icon gap:platform="winphone" src="res/icon/windows-phone/icon-48.png" />
+    <icon gap:platform="winphone" gap:role="background" src="res/icon/windows-phone/icon-173.png" />
+   
+
+    <gap:splash gap:density="ldpi" gap:platform="android" src="resources/startup/426X320.png" />
+    <gap:splash gap:density="mdpi" gap:platform="android" src="resources/startup/470X320.png" />
+    <gap:splash gap:density="hdpi" gap:platform="android" src="resources/startup/640X480.png" />
+    <gap:splash gap:density="xhdpi" gap:platform="android" src="resources/startup/960X720.png" />
+    
+    <gap:splash gap:platform="blackberry" src="res/screen/blackberry/screen-225.png" />
+   
+   
+    <gap:splash gap:platform="winphone" src="res/screen/windows-phone/screen-portrait.jpg" />
+
+    <gap:plugin name="de.appplant.cordova.plugin.local-notification" />
+    <gap:plugin name="org.apache.cordova.network-information"/>
+    <gap:plugin name="org.apache.cordova.splashscreen" />
+    <gap:plugin name="com.teamnemitoff.phonedialer"  />
+    <gap:plugin name="com.phonegap.plugins.pushplugin"/>
+    <gap:plugin name="org.li8.inappbrowser" version="0.1" />
+    <gap:plugin name="org.apache.cordova.camera" />
+	<gap:plugin name="com.phonegap.plugins.barcodescanner" />
+    <gap:plugin name="org.apache.cordova.device" />
+
+    <access origin="*" />
+
+</widget>

@@ -1,4 +1,4 @@
-Ext.ns("ReminDoo");
+function _a8e130d123fbd6dadeac842f5921e641da7242de(){};Ext.ns("ReminDoo");
 
 
 document.addEventListener("deviceready", function() {
