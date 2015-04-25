@@ -1,4 +1,4 @@
-function _8afa19d83babc2d3a914a47b7c20599f0c4ea24f(){};//@tag foundation,core
+function _28450b995596b2336c2e090211c826f8e720f5a6(){};//@tag foundation,core
 //@define Ext
 /**
  * @class Ext
@@ -69388,8 +69388,8 @@ Ext.application({
     ],
     name: 'Mobile',
     launch: function() {
-        ReminDooInit();
         var me = this;
+        Ext.ns("ReminDoo");
         ReminDoo.Version = 38;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
