@@ -1,4 +1,4 @@
-function _092d2a434223b2ddd16c8e286d5cf03e34b3a5cd(){};//@tag foundation,core
+function _c26db8cd816221f757eccec8bccd019a50c83b3a(){};//@tag foundation,core
 //@define Ext
 /**
  * @class Ext
@@ -69408,7 +69408,6 @@ Ext.application({
         if (document.location.protocol == "file:") {
             ReminDoo.url = "http://remindoo.net/Data02.ashx";
         } else {
-            ReminDoo.UUID = "2345678";
             if (document.location.hostname == "localhost") {
                 ReminDoo.url = "http://" + location.host + "/ReminDoo/Data02.ashx";
             } else {

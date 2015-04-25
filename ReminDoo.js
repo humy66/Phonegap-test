@@ -1,8 +1,7 @@
-function _d4f134aef3319718f4b20d458a991c868ef96027(){};function ReminDooInit() 
+function _d26e8f4967e8545f69c9c65571e0ec56b3a1fdf0(){};function ReminDooInit() 
 {
 
 
-	Ext.ns("ReminDoo");
 
 
 document.addEventListener("deviceready", function() {
