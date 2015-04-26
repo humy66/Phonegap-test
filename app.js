@@ -1,4 +1,4 @@
-function _0154d21669703a21855977a6bd3d308e9666fc0a(){};//@tag foundation,core
+function _cad8726290facd989e4509d4f09e2f15aed95053(){};//@tag foundation,core
 //@define Ext
 /**
  * @class Ext
@@ -68622,7 +68622,6 @@ Ext.define('Mobile.view.CameraSource', {
         ]
     },
     onMyactionsheetInitialize: function(component, eOpts) {
-        debugger;
         ReminDoo.Translate(component);
     }
 });
@@ -69967,6 +69966,7 @@ Ext.application({
                     version: ReminDoo.Version,
                     uuid: ReminDoo.UUID
                 }, function(res) {
+                    console.log("After GetInfo:" + JSON.stringify(res));
                     if (res.success) {
                         ReminDoo.SystemId = res.SystemId;
                         ReminDoo.PersonId = res.PersonId;
@@ -69975,8 +69975,10 @@ Ext.application({
                         ReminDoo.Users = res.Users;
                         Ext.getStore("Users").setData(res.Users);
                         ReminDoo.setUserName(ReminDoo.FullName);
+                        console.log("b4 Main.initialize ");
                         ReminDoo.getController("Main").initialize();
                     } else {
+                        console.log("b4 Account.show ");
                         ReminDoo.getController("Account").show();
                     }
                 });
