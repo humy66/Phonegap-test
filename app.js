@@ -1,4 +1,4 @@
-function _bdd0b0940845b5ae3cf5002a820aa591798e05e2(){};//@tag foundation,core
+//@tag foundation,core
 //@define Ext
 /**
  * @class Ext
@@ -16894,7 +16894,7 @@ Ext.define('Ext.util.Format', {
                     if (Ext.os.is.Android && Ext.os.version.isLessThan("3.0")) {
                         /**
                          * This code is modified from the following source: <https://github.com/csnover/js-iso8601>
-                         * � 2011 Colin Snover <http://zetafleet.com>
+                         * © 2011 Colin Snover <http://zetafleet.com>
                          * Released under MIT license.
                          */
                         var potentialUndefinedKeys = [
@@ -16917,7 +16917,7 @@ Ext.define('Ext.util.Format', {
                         // 6 ss (optional)
                         // 7 msec (optional)
                         // 8 Z (optional)
-                        // 9 � (optional)
+                        // 9 ± (optional)
                         // 10 tzHH (optional)
                         // 11 tzmm (optional)
                         if ((dateParsed = /^(\d{4}|[+\-]\d{6})(?:-(\d{2})(?:-(\d{2}))?)?(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{3}))?)?(?:(Z)|([+\-])(\d{2})(?::(\d{2}))?)?)?$/.exec(value))) {
@@ -31370,6 +31370,432 @@ Ext.define('Ext.Ajax', {
      * Whether a new request should abort any pending requests.
      */
     autoAbort: false
+});
+
+/**
+ * Provides a base class for audio/visual controls. Should not be used directly.
+ *
+ * Please see the {@link Ext.Audio} and {@link Ext.Video} classes for more information.
+ * @private
+ */
+Ext.define('Ext.Media', {
+    extend: Ext.Component,
+    xtype: 'media',
+    /**
+     * @event play
+     * Fires whenever the media is played.
+     * @param {Ext.Media} this
+     */
+    /**
+     * @event pause
+     * Fires whenever the media is paused.
+     * @param {Ext.Media} this
+     * @param {Number} time The time at which the media was paused at in seconds.
+     */
+    /**
+     * @event ended
+     * Fires whenever the media playback has ended.
+     * @param {Ext.Media} this
+     * @param {Number} time The time at which the media ended at in seconds.
+     */
+    /**
+     * @event stop
+     * Fires whenever the media is stopped.
+     * The `pause` event will also fire after the `stop` event if the media is currently playing.
+     * The `timeupdate` event will also fire after the `stop` event regardless of playing status.
+     * @param {Ext.Media} this
+     */
+    /**
+     * @event volumechange
+     * Fires whenever the volume is changed.
+     * @param {Ext.Media} this
+     * @param {Number} volume The volume level from 0 to 1.
+     */
+    /**
+     * @event mutedchange
+     * Fires whenever the muted status is changed.
+     * The volumechange event will also fire after the `mutedchange` event fires.
+     * @param {Ext.Media} this
+     * @param {Boolean} muted The muted status.
+     */
+    /**
+     * @event timeupdate
+     * Fires when the media is playing every 15 to 250ms.
+     * @param {Ext.Media} this
+     * @param {Number} time The current time in seconds.
+     */
+    config: {
+        /**
+         * @cfg {String} url
+         * Location of the media to play.
+         * @accessor
+         */
+        url: '',
+        /**
+         * @cfg {Boolean} enableControls
+         * Set this to `false` to turn off the native media controls.
+         * Defaults to `false` when you are on Android, as it doesn't support controls.
+         * @accessor
+         */
+        enableControls: Ext.os.is.Android ? false : true,
+        /**
+         * @cfg {Boolean} autoResume
+         * Will automatically start playing the media when the container is activated.
+         * @accessor
+         */
+        autoResume: false,
+        /**
+         * @cfg {Boolean} autoPause
+         * Will automatically pause the media when the container is deactivated.
+         * @accessor
+         */
+        autoPause: true,
+        /**
+         * @cfg {Boolean} preload
+         * Will begin preloading the media immediately.
+         * @accessor
+         */
+        preload: true,
+        /**
+         * @cfg {Boolean} loop
+         * Will loop the media forever.
+         * @accessor
+         */
+        loop: false,
+        /**
+         * @cfg {Ext.Element} media
+         * A reference to the underlying audio/video element.
+         * @accessor
+         */
+        media: null,
+        /**
+         * @cfg {Number} volume
+         * The volume of the media from 0.0 to 1.0.
+         * @accessor
+         */
+        volume: 1,
+        /**
+         * @cfg {Boolean} muted
+         * Whether or not the media is muted. This will also set the volume to zero.
+         * @accessor
+         */
+        muted: false
+    },
+    constructor: function() {
+        this.mediaEvents = {};
+        this.callSuper(arguments);
+    },
+    initialize: function() {
+        var me = this;
+        me.callParent();
+        me.on({
+            scope: me,
+            activate: me.onActivate,
+            deactivate: me.onDeactivate
+        });
+        me.addMediaListener({
+            canplay: 'onCanPlay',
+            play: 'onPlay',
+            pause: 'onPause',
+            ended: 'onEnd',
+            volumechange: 'onVolumeChange',
+            timeupdate: 'onTimeUpdate'
+        });
+    },
+    addMediaListener: function(event, fn) {
+        var me = this,
+            dom = me.media.dom,
+            bind = Ext.Function.bind;
+        Ext.Object.each(event, function(e, fn) {
+            fn = bind(me[fn], me);
+            me.mediaEvents[e] = fn;
+            dom.addEventListener(e, fn);
+        });
+    },
+    onPlay: function() {
+        this.fireEvent('play', this);
+    },
+    onCanPlay: function() {
+        this.fireEvent('canplay', this);
+    },
+    onPause: function() {
+        this.fireEvent('pause', this, this.getCurrentTime());
+    },
+    onEnd: function() {
+        this.fireEvent('ended', this, this.getCurrentTime());
+    },
+    onVolumeChange: function() {
+        this.fireEvent('volumechange', this, this.media.dom.volume);
+    },
+    onTimeUpdate: function() {
+        this.fireEvent('timeupdate', this, this.getCurrentTime());
+    },
+    /**
+     * Returns if the media is currently playing.
+     * @return {Boolean} playing `true` if the media is playing.
+     */
+    isPlaying: function() {
+        return !Boolean(this.media.dom.paused);
+    },
+    // @private
+    onActivate: function() {
+        var me = this;
+        if (me.getAutoResume() && !me.isPlaying()) {
+            me.play();
+        }
+    },
+    // @private
+    onDeactivate: function() {
+        var me = this;
+        if (me.getAutoPause() && me.isPlaying()) {
+            me.pause();
+        }
+    },
+    /**
+     * Sets the URL of the media element. If the media element already exists, it is update the src attribute of the
+     * element. If it is currently playing, it will start the new video.
+     */
+    updateUrl: function(newUrl) {
+        var dom = this.media.dom;
+        //when changing the src, we must call load:
+        //http://developer.apple.com/library/safari/#documentation/AudioVideo/Conceptual/Using_HTML5_Audio_Video/ControllingMediaWithJavaScript/ControllingMediaWithJavaScript.html
+        dom.src = newUrl;
+        if ('load' in dom) {
+            dom.load();
+        }
+        if (this.isPlaying()) {
+            this.play();
+        }
+    },
+    /**
+     * Updates the controls of the video element.
+     */
+    updateEnableControls: function(enableControls) {
+        this.media.dom.controls = enableControls ? 'controls' : false;
+    },
+    /**
+     * Updates the loop setting of the media element.
+     */
+    updateLoop: function(loop) {
+        this.media.dom.loop = loop ? 'loop' : false;
+    },
+    /**
+     * Starts or resumes media playback.
+     */
+    play: function() {
+        var dom = this.media.dom;
+        if ('play' in dom) {
+            dom.play();
+            setTimeout(function() {
+                dom.play();
+            }, 10);
+        }
+    },
+    /**
+     * Pauses media playback.
+     */
+    pause: function() {
+        var dom = this.media.dom;
+        if ('pause' in dom) {
+            dom.pause();
+        }
+    },
+    /**
+     * Toggles the media playback state.
+     */
+    toggle: function() {
+        if (this.isPlaying()) {
+            this.pause();
+        } else {
+            this.play();
+        }
+    },
+    /**
+     * Stops media playback and returns to the beginning.
+     */
+    stop: function() {
+        var me = this;
+        me.setCurrentTime(0);
+        me.fireEvent('stop', me);
+        me.pause();
+    },
+    //@private
+    updateVolume: function(volume) {
+        this.media.dom.volume = volume;
+    },
+    //@private
+    updateMuted: function(muted) {
+        this.fireEvent('mutedchange', this, muted);
+        this.media.dom.muted = muted;
+    },
+    /**
+     * Returns the current time of the media, in seconds.
+     * @return {Number}
+     */
+    getCurrentTime: function() {
+        return this.media.dom.currentTime;
+    },
+    /*
+     * Set the current time of the media.
+     * @param {Number} time The time, in seconds.
+     * @return {Number}
+     */
+    setCurrentTime: function(time) {
+        this.media.dom.currentTime = time;
+        return time;
+    },
+    /**
+     * Returns the duration of the media, in seconds.
+     * @return {Number}
+     */
+    getDuration: function() {
+        return this.media.dom.duration;
+    },
+    destroy: function() {
+        var me = this,
+            dom = me.media.dom,
+            mediaEvents = me.mediaEvents;
+        Ext.Object.each(mediaEvents, function(event, fn) {
+            dom.removeEventListener(event, fn);
+        });
+        this.callSuper();
+    }
+});
+
+/**
+ * {@link Ext.Audio} is a simple class which provides a container for the 
+ * [HTML5 Audio element](http://developer.mozilla.org/en-US/docs/Using_HTML5_audio_and_video).
+ *
+ * ## Recommended File Types/Compression:
+ * 
+ * * Uncompressed WAV and AIF audio
+ * * MP3 audio
+ * * AAC-LC
+ * * HE-AAC audio
+ *
+ * ## Notes
+ * 
+ * On Android devices, the audio tags controls do not show. You must use the {@link #method-play}, 
+ * {@link #method-pause}, and {@link #toggle} methods to control the audio (example below).
+ *
+ * ## Examples
+ *
+ * This example shows the use of the {@link Ext.Audio} component in a fullscreen container--change 
+ * the url: item for the location of an audio file--note that the audio starts on page load:
+ *
+ *     @example preview
+ *     Ext.create('Ext.Container', {
+ *         fullscreen: true,
+ *         layout: {
+ *             type : 'vbox',
+ *             pack : 'center',
+ *             align: 'stretch'
+ *         },
+ *         items: [
+ *             {
+ *                 xtype : 'toolbar',
+ *                 docked: 'top',
+ *                 title : 'Ext.Audio'
+ *             },
+ *             {
+ *                 xtype: 'audio',
+ *                 url  : 'touch-build/examples/audio/crash.mp3'
+ *             }
+ *         ]
+ *     });
+ *
+ * You can also set the {@link #hidden} configuration of the {@link Ext.Audio} component to true by default,
+ * and then control the audio by using the {@link #method-play}, {@link #method-pause}, and {@link #toggle} methods:
+ *
+ *     @example preview
+ *     Ext.create('Ext.Container', {
+ *         fullscreen: true,
+ *         layout: {
+ *             type: 'vbox',
+ *             pack: 'center'
+ *         },
+ *         items: [
+ *             {
+ *                 xtype : 'toolbar',
+ *                 docked: 'top',
+ *                 title : 'Ext.Audio'
+ *             },
+ *             {
+ *                 xtype: 'toolbar',
+ *                 docked: 'bottom',
+ *                 defaults: {
+ *                     xtype: 'button',
+ *                     handler: function() {
+ *                         var container = this.getParent().getParent(),
+ *                             // use ComponentQuery to get the audio component (using its xtype)
+ *                             audio = container.down('audio');
+ *
+ *                         audio.toggle();
+ *                         this.setText(audio.isPlaying() ? 'Pause' : 'Play');
+ *                     }
+ *                 },
+ *                 items: [
+ *                     { text: 'Play', flex: 1 }
+ *                 ]
+ *             },
+ *             {
+ *                 html: 'Hidden audio!',
+ *                 styleHtmlContent: true
+ *             },
+ *             {
+ *                 xtype : 'audio',
+ *                 hidden: true,
+ *                 url   : 'touch-build/examples/audio/crash.mp3'
+ *             }
+ *         ]
+ *     });
+ * @aside example audio
+ */
+Ext.define('Ext.Audio', {
+    extend: Ext.Media,
+    xtype: 'audio',
+    config: {
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        cls: Ext.baseCSSPrefix + 'audio'
+    },
+    /**
+         * @cfg {String} url
+         * The location of the audio to play.
+         *
+         * ### Recommended file types are:
+         * * Uncompressed WAV and AIF audio
+         * * MP3 audio
+         * * AAC-LC
+         * * HE-AAC audio
+         * @accessor
+         */
+    // @private
+    onActivate: function() {
+        var me = this;
+        me.callParent();
+        if (Ext.os.is.Phone) {
+            me.element.show();
+        }
+    },
+    // @private
+    onDeactivate: function() {
+        var me = this;
+        me.callParent();
+        if (Ext.os.is.Phone) {
+            me.element.hide();
+        }
+    },
+    template: [
+        {
+            reference: 'media',
+            preload: 'auto',
+            tag: 'audio',
+            cls: Ext.baseCSSPrefix + 'component'
+        }
+    ]
 });
 
 /**
@@ -67049,52 +67475,52 @@ Ext.define('Mobile.view.EventForm', {
                     {
                         xtype: 'textfield',
                         clearIcon: false,
-                        label: '????',
+                        label: 'תאור',
                         name: 'Name'
                     },
                     {
                         xtype: 'checkboxfield',
-                        label: '??? ???',
+                        label: 'יום שלם',
                         name: 'isDay'
                     },
                     {
                         xtype: 'datepickerfield',
-                        label: '?????',
+                        label: 'התחלה',
                         name: 'StartTime',
                         dateFormat: 'H:i'
                     },
                     {
                         xtype: 'datepickerfield',
-                        label: '????',
+                        label: 'סיום',
                         name: 'EndTime',
                         dateFormat: 'H:i'
                     },
                     {
                         xtype: 'textfield',
                         clearIcon: false,
-                        label: '?????',
+                        label: 'מיקום',
                         name: 'Location'
                     },
                     {
                         xtype: 'textfield',
                         clearIcon: false,
-                        label: '???????',
+                        label: 'משתתפים',
                         name: 'Participants'
                     },
                     {
                         xtype: 'textareafield',
                         clearIcon: false,
-                        label: '?????',
+                        label: 'פרטים',
                         name: 'Description'
                     },
                     {
                         xtype: 'checkboxfield',
-                        label: '????',
+                        label: 'נסתר',
                         name: 'Hidden'
                     },
                     {
                         xtype: 'checkboxfield',
-                        label: '???? ?????',
+                        label: 'חובת אישור',
                         name: 'Confirmation'
                     },
                     {
@@ -67114,7 +67540,7 @@ Ext.define('Mobile.view.EventForm', {
                     {
                         xtype: 'button',
                         itemId: 'event-save',
-                        text: '????'
+                        text: 'שמור'
                     }
                 ]
             }
@@ -67491,8 +67917,8 @@ Ext.define('Mobile.view.NewEventForm', {
                         'minute'
                     ],
                     ampm: false,
-                    cancelButton: '?????',
-                    doneButton: '?????'
+                    cancelButton: 'ביטול',
+                    doneButton: 'אישור'
                 },
                 dateTimeFormat: 'H:i',
                 itemId: 'start-time',
@@ -67511,8 +67937,8 @@ Ext.define('Mobile.view.NewEventForm', {
                         'minute'
                     ],
                     ampm: false,
-                    cancelButton: '?????',
-                    doneButton: '?????'
+                    cancelButton: 'ביטול',
+                    doneButton: 'אישור'
                 },
                 dateTimeFormat: 'H:i',
                 itemId: 'end-time',
@@ -68209,7 +68635,20 @@ Ext.define('Mobile.view.VoiceMailMessagePanel', {
     config: {
         fullscreen: false,
         itemId: 'myformpanel3',
+        layout: 'vbox',
         items: [
+            {
+                xtype: 'container',
+                height: 100,
+                style: 'background:red',
+                items: [
+                    {
+                        xtype: 'audio',
+                        itemId: 'audio-player',
+                        enableControls: true
+                    }
+                ]
+            },
             {
                 xtype: 'textfield',
                 clearIcon: false,
@@ -68261,8 +68700,8 @@ Ext.define('Mobile.view.VoiceMailMessagePanel', {
                     var p = button.up("formpanel");
                 },
                 /*
-                    Ext.Msg.confirm("?????",
-                    "???????",
+                    Ext.Msg.confirm("אישור",
+                    "להשמיע?",
                     function(btn) {
                     if (btn=="yes") {audio.play();}
                     }
@@ -68272,7 +68711,7 @@ Ext.define('Mobile.view.VoiceMailMessagePanel', {
                 hidden: true,
                 itemId: 'btn-play',
                 margin: '0 50 0 50',
-                text: '????'
+                text: 'השמע'
             }
         ]
     }
@@ -68427,7 +68866,8 @@ Ext.define('Mobile.controller.VoiceMail', {
                 autoCreate: true,
                 selector: 'navigationview#voice-mail-nav',
                 xtype: 'voicemailnav'
-            }
+            },
+            audioPlayer: 'audio#audio-player'
         },
         control: {
             "button#button-list": {
@@ -68464,10 +68904,12 @@ Ext.define('Mobile.controller.VoiceMail', {
         p.setRecord(record);
         var IdRec = record.get("IdRec");
         var url = ReminDoo.makeVoiceMessageURL(IdRec);
-        var audio = "<audio id='myplayer' preload='auto' src='" + url + "' controls></audio>" + "<div>" + "<button style='font-size:16px' onclick='playPause()'>????</button>" + "</div>" + "<script>" + "var myAudio = document.getElementById('myplayer'); " + "function playPause() {if (myAudio.paused) myAudio.play(); else myAudio.pause(); } " + "</script>";
+        var audio = "<audio id='myplayer' preload='auto' src='" + url + "' controls></audio>" + "<div>" + "<button style='font-size:16px' onclick='playPause()'>השמע</button>" + "</div>" + "<script>" + "var myAudio = document.getElementById('myplayer'); " + "function playPause() {if (myAudio.paused) myAudio.play(); else myAudio.pause(); } " + "</script>";
         var html = '<iframe width="90%" height="120px" type="text/html"' + 'srcdoc="' + audio + '"' + ' frameborder="0">' + '</iframe>';
         var f = this.getAudioiframe();
         f.setHtml(html);
+        console.log("audio=" + url);
+        this.getAudioPlayer().setUrl(url);
     },
     //var player = this.getAudioplayer();
     //player.setUrl(url);
@@ -68602,7 +69044,7 @@ Ext.define('Mobile.view.CameraSource', {
                 },
                 hidden: true,
                 itemId: 'album',
-                text: '?????'
+                text: 'אלבום'
             },
             {
                 xtype: 'button',
@@ -68883,7 +69325,7 @@ Ext.define('Mobile.view.GalleryPanel', {
                 itemId: 'body',
                 clearIcon: false,
                 inputCls: 'right',
-                label: '??',
+                label: 'שם',
                 labelAlign: 'right',
                 labelCls: 'right',
                 name: 'Body'
@@ -69235,7 +69677,7 @@ Ext.define('Mobile.view.SelectRecipients', {
     extend: Ext.Panel,
     alias: 'widget.selectrecipients',
     config: {
-        title: '?????? ??????',
+        title: 'נמענים להודעה',
         itemId: 'panel-recipients',
         layout: 'vbox',
         items: [
@@ -69261,7 +69703,7 @@ Ext.define('Mobile.view.SelectRecipients', {
                     {
                         xtype: 'button',
                         itemId: 'select-recipients-button',
-                        text: '???'
+                        text: 'בחר'
                     }
                 ]
             }
@@ -69310,7 +69752,7 @@ Ext.define('Mobile.view.ComposePanel', {
                         itemId: 'recipients',
                         clearIcon: false,
                         label: '',
-                        placeHolder: '??????'
+                        placeHolder: 'נמענים'
                     }
                 ]
             },
@@ -69321,14 +69763,14 @@ Ext.define('Mobile.view.ComposePanel', {
                 itemId: 'body',
                 clearIcon: false,
                 labelAlign: 'top',
-                placeHolder: '????'
+                placeHolder: 'תוכן'
             },
             {
                 xtype: 'button',
                 itemId: 'post-button',
                 ui: 'action',
                 width: 100,
-                text: '???'
+                text: 'שלח'
             }
         ]
     }
@@ -69433,7 +69875,7 @@ Ext.define('Mobile.controller.Mail', {
         if (toList.length === 0) {
             Ext.Msg.alert("", ReminDoo.T("SelectRecipients"));
         }
-        //"?? ????? ??????");
+        //"יש לבחור נמענים");
         else if (Ext.isEmpty(body)) {
             Ext.Msg.alert("", ReminDoo.T("EnterContent"));
         } else {
@@ -69617,7 +70059,7 @@ Ext.define('Mobile.view.InMessageItem', {
                         },
                         margin: 2,
                         ui: 'decline',
-                        text: '??'
+                        text: 'לא'
                     },
                     {
                         xtype: 'button',
@@ -69627,7 +70069,7 @@ Ext.define('Mobile.view.InMessageItem', {
                         },
                         margin: 2,
                         ui: 'confirm',
-                        text: '??'
+                        text: 'כן'
                     },
                     {
                         xtype: 'spacer'
@@ -69641,7 +70083,7 @@ Ext.define('Mobile.view.InMessageItem', {
                         itemId: 'confirm',
                         margin: '2 6 2 2 ',
                         ui: 'action',
-                        text: '?????'
+                        text: 'קראתי'
                     }
                 ]
             }
@@ -69768,8 +70210,8 @@ Ext.application({
         ReminDoo.deviceType = -1;
         ReminDooInit();
         var me = this;
-        ReminDoo.Version = 42;
-        //console.log("version:"+ReminDoo.Version);
+        ReminDoo.Version = 43;
+        console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
         };
@@ -69823,11 +70265,7 @@ Ext.application({
                         iconCls: 'message',
                         itemId: 'menu-messages'
                     },
-                    {
-                        text: 'VoiceMessage',
-                        iconCls: 'audio',
-                        itemId: 'menu-voicemessage'
-                    },
+                    //{text:'VoiceMessage',iconCls:'audio',itemId:'menu-voicemessage'},
                     {
                         text: 'Gallery',
                         iconCls: 'gallery',

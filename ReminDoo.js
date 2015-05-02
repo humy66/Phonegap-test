@@ -1,4 +1,4 @@
-function _9f12ebd7a0821c094d8cda6ae8ef6501cc1e106b(){};function ReminDooInit() 
+function ReminDooInit() 
 {
 
 
