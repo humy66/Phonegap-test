@@ -14,7 +14,7 @@ document.addEventListener("backbutton", function() {
         if (canPop) {
             p.pop();
         } else {
-        	     Remindoo.hideMenu();
+        	     ReminDoo.hideMenu();
                  Ext.Msg.show({
                     title : ReminDoo.T('ExitButtonPressed'),
                     width: 300,
