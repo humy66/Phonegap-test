@@ -67548,7 +67548,11 @@ Ext.define('Mobile.controller.Account', {
         var p = this.getManageNav();
         ReminDoo.showPanel(p);
         p.show();
-        p.down("#active-user").setHtml(ReminDoo.FullName);
+        if (!Ext.isEmpty(ReminDoo.FullName)) {
+            p.down("#active-user").setHtml(ReminDoo.FullName);
+        } else {
+            this.onRegister();
+        }
     }
 });
 /*
