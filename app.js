@@ -70328,7 +70328,7 @@ Ext.application({
         ReminDoo.deviceType = -1;
         ReminDooInit();
         var me = this;
-        ReminDoo.Version = 45;
+        ReminDoo.Version = 46;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
@@ -70546,6 +70546,7 @@ Ext.application({
                     version: ReminDoo.Version,
                     uuid: ReminDoo.UUID
                 }, function(res) {
+                    ReminDoo.unMask();
                     //console.log("After GetInfo:"+JSON.stringify(res));
                     if (res.success) {
                         ReminDoo.SystemId = res.SystemId;
