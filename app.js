@@ -60884,6 +60884,161 @@ Ext.define('Ext.field.Hidden', {
 });
 
 /**
+ * @aside guide forms
+ *
+ * The Number field creates an HTML5 number input and is usually created inside a form. Because it creates an HTML
+ * number input field, most browsers will show a specialized virtual keyboard for entering numbers. The Number field
+ * only accepts numerical input and also provides additional spinner UI that increases or decreases the current value
+ * by a configured {@link #stepValue step value}. Here's how we might use one in a form:
+ *
+ *     @example
+ *     Ext.create('Ext.form.Panel', {
+ *         fullscreen: true,
+ *         items: [
+ *             {
+ *                 xtype: 'fieldset',
+ *                 title: 'How old are you?',
+ *                 items: [
+ *                     {
+ *                         xtype: 'numberfield',
+ *                         label: 'Age',
+ *                         minValue: 18,
+ *                         maxValue: 150,
+ *                         name: 'age'
+ *                     }
+ *                 ]
+ *             }
+ *         ]
+ *     });
+ *
+ * Or on its own, outside of a form:
+ *
+ *     Ext.create('Ext.field.Number', {
+ *         label: 'Age',
+ *         value: '26'
+ *     });
+ *
+ * ## minValue, maxValue and stepValue
+ *
+ * The {@link #minValue} and {@link #maxValue} configurations are self-explanatory and simply constrain the value
+ * entered to the range specified by the configured min and max values. The other option exposed by this component
+ * is {@link #stepValue}, which enables you to set how much the value changes every time the up and down spinners
+ * are tapped on. For example, to create a salary field that ticks up and down by $1,000 each tap we can do this:
+ *
+ *     @example
+ *     Ext.create('Ext.form.Panel', {
+ *         fullscreen: true,
+ *         items: [
+ *             {
+ *                 xtype: 'fieldset',
+ *                 title: 'Are you rich yet?',
+ *                 items: [
+ *                     {
+ *                         xtype: 'numberfield',
+ *                         label: 'Salary',
+ *                         value: 30000,
+ *                         minValue: 25000,
+ *                         maxValue: 50000,
+ *                         stepValue: 1000
+ *                     }
+ *                 ]
+ *             }
+ *         ]
+ *     });
+ *
+ * This creates a field that starts with a value of $30,000, steps up and down in $1,000 increments and will not go
+ * beneath $25,000 or above $50,000.
+ *
+ * Because number field inherits from {@link Ext.field.Text textfield} it gains all of the functionality that text
+ * fields provide, including getting and setting the value at runtime, validations and various events that are fired as
+ * the user interacts with the component. Check out the {@link Ext.field.Text} docs to see the additional functionality
+ * available.
+ */
+Ext.define('Ext.field.Number', {
+    extend: Ext.field.Text,
+    xtype: 'numberfield',
+    alternateClassName: 'Ext.form.Number',
+    config: {
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        component: {
+            type: 'number'
+        },
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        ui: 'number'
+    },
+    proxyConfig: {
+        /**
+         * @cfg {Number} minValue The minimum value that this Number field can accept
+         * @accessor
+         */
+        minValue: null,
+        /**
+         * @cfg {Number} maxValue The maximum value that this Number field can accept
+         * @accessor
+         */
+        maxValue: null,
+        /**
+         * @cfg {Number} stepValue The amount by which the field is incremented or decremented each time the spinner is tapped.
+         * Defaults to undefined, which means that the field goes up or down by 1 each time the spinner is tapped
+         * @accessor
+         */
+        stepValue: null
+    },
+    applyPlaceHolder: function(value) {
+        // Android 4.1 & lower require a hack for placeholder text in number fields when using the Stock Browser
+        // details here https://code.google.com/p/android/issues/detail?id=24626
+        this._enableNumericPlaceHolderHack = ((!Ext.feature.has.NumericInputPlaceHolder) && (!Ext.isEmpty(value)));
+        return value;
+    },
+    onFocus: function(e) {
+        if (this._enableNumericPlaceHolderHack) {
+            this.getComponent().input.dom.setAttribute("type", "number");
+        }
+        this.callParent(arguments);
+    },
+    onBlur: function(e) {
+        if (this._enableNumericPlaceHolderHack) {
+            this.getComponent().input.dom.setAttribute("type", "text");
+        }
+        this.callParent(arguments);
+    },
+    doInitValue: function() {
+        var value = this.getInitialConfig().value;
+        if (value) {
+            value = this.applyValue(value);
+        }
+        this.originalValue = value;
+    },
+    applyValue: function(value) {
+        var minValue = this.getMinValue(),
+            maxValue = this.getMaxValue();
+        if (Ext.isNumber(minValue) && Ext.isNumber(value)) {
+            value = Math.max(value, minValue);
+        }
+        if (Ext.isNumber(maxValue) && Ext.isNumber(value)) {
+            value = Math.min(value, maxValue);
+        }
+        value = parseFloat(value);
+        return (isNaN(value)) ? '' : value;
+    },
+    getValue: function() {
+        var value = parseFloat(this.callParent(), 10);
+        return (isNaN(value)) ? null : value;
+    },
+    doClearIconTap: function(me, e) {
+        me.getComponent().setValue('');
+        me.getValue();
+        me.hideClearIcon();
+    }
+});
+
+/**
  * The Form panel presents a set of form fields and provides convenient ways to load and save data. Usually a form
  * panel just contains the set of fields you want to display, ordered inside the items configuration like this:
  *
@@ -66777,6 +66932,9 @@ Ext.define('Mobile.model.Event', {
                 name: 'Participants'
             },
             {
+                convert: function(v, rec) {
+                    return ReminDoo.util.parseBool(v);
+                },
                 name: 'isDay'
             },
             {
@@ -67875,9 +68033,22 @@ Ext.define('Mobile.view.EventNav', {
                         itemTpl: [
                             '<div dir=rtl>',
                             '    <div style="font-size:12px;width:10px;display:inline-block;background:#{Color}">&nbsp;</div>',
-                            '    <div style="font-weight:bold;font-size:12px;display:inline">{StartTime:date("H:i")}-{EndTime:date("H:i")}</div>',
+                            '    ',
+                            '    <tpl if="!isDay">',
+                            '       <div style="font-weight:bold;font-size:12px;display:inline">{StartTime:date("H:i")}-{EndTime:date("H:i")}</div>',
+                            '    </tpl>',
+                            '    ',
+                            '    <tpl if="isDay">',
+                            '       <div style="font-weight:bold;font-size:12px;display:inline">כל היום</div>',
+                            '    </tpl>',
+                            '',
+                            '    ',
                             '    <div style="font-weight:bold;font-size:12px;display:inline">{calendarName}</div>',
                             '    <div style="font-size:16px;display:inline">{Name}</div>',
+                            '    ',
+                            '    <tpl if="Location">',
+                            '        <div style="font-size:12px;">מיקום:{Location}</div>',
+                            '    </tpl>',
                             '    <tpl if="Confirmation">',
                             '        &#160;-&#160;',
                             '        <tpl if="wasConfirmation">',
@@ -68001,6 +68172,7 @@ Ext.define('Mobile.view.NewEventForm', {
         items: [
             {
                 xtype: 'textfield',
+                itemId: 'mytextfield3',
                 clearIcon: false,
                 inputCls: 'right',
                 label: 'Name',
@@ -68029,6 +68201,7 @@ Ext.define('Mobile.view.NewEventForm', {
                 dateFormat: 'd/m/y',
                 picker: {
                     itemId: 'mydatepicker5',
+                    yearTo: 2099,
                     listeners: [
                         {
                             fn: function(component, eOpts) {
@@ -68142,6 +68315,16 @@ Ext.define('Mobile.view.NewEventForm', {
                     },
                     {
                         xtype: 'button',
+                        itemId: 'delete-btn',
+                        text: 'Delete'
+                    },
+                    {
+                        xtype: 'button',
+                        itemId: 'recurrent-btn',
+                        text: 'Recurrent'
+                    },
+                    {
+                        xtype: 'button',
                         itemId: 'save-btn',
                         text: 'Save'
                     }
@@ -68149,6 +68332,11 @@ Ext.define('Mobile.view.NewEventForm', {
             }
         ],
         listeners: [
+            {
+                fn: 'onMytextfield3Focus',
+                event: 'focus',
+                delegate: '#mytextfield3'
+            },
             {
                 fn: 'onMycheckbox6Change',
                 event: 'change',
@@ -68164,6 +68352,11 @@ Ext.define('Mobile.view.NewEventForm', {
                 event: 'initialize'
             }
         ]
+    },
+    onMytextfield3Focus: function(textfield, e, eOpts) {
+        Ext.defer(function() {
+            textfield.select();
+        }, 100);
     },
     onMycheckbox6Change: function(checkboxfield, newValue, oldValue, eOpts) {
         var f = checkboxfield.up("formpanel");
@@ -68294,6 +68487,12 @@ Ext.define('Mobile.controller.Event', {
             },
             "button#add": {
                 tap: 'onAdd'
+            },
+            "button#delete-btn": {
+                tap: 'onDeleteTap'
+            },
+            "button#recurrent-btn": {
+                tap: 'onRecurrent'
             }
         }
     },
@@ -68402,6 +68601,39 @@ Ext.define('Mobile.controller.Event', {
         var nav = this.getEventNav();
         this.getShowEventMessage().hide();
         nav.push(form);
+    },
+    onDeleteTap: function(button, e, eOpts) {
+        var me = this;
+        var nav = this.getEventNav();
+        var form = this.getNewEventForm();
+        var values = form.getValues();
+        Ext.Msg.confirm("אישור מחיקה", values.Name, function(btn) {
+            if (btn == "yes") {
+                ReminDoo.mask();
+                ReminDoo.post("DeleteEvent", values, function(res) {
+                    if (res.success) {
+                        ReminDoo.unMask();
+                        nav.pop();
+                        me.loadEvents(values.Date);
+                    }
+                });
+            }
+        });
+    },
+    onRecurrent: function(button, e, eOpts) {
+        var form = this.getNewEventForm();
+        var values = form.getValues();
+        var sheet = Ext.widget("recurrentsheet");
+        sheet.on("select", function(count, step) {
+            Ext.apply(values, {
+                count: count,
+                step: step
+            });
+            ReminDoo.post("RecurrentEvent", values, function(res) {
+                sheet.hide();
+            });
+        });
+        sheet.show();
     },
     loadEvents: function(dt) {
         if (dt) {
@@ -69799,6 +70031,21 @@ Ext.define('Mobile.view.MailNav', {
                 }
             ]
         }
+    },
+    onPush: function() {
+        this.down("#compose").hide();
+        if (!this.pushLevel) {
+            this.pushLevel = 0;
+        }
+        this.pushLevel++;
+    },
+    onPop: function() {
+        if (this.pushLevel > 0) {
+            this.pushLevel--;
+        }
+        if (this.pushLevel === 0) {
+            this.down("#compose").show();
+        }
     }
 });
 
@@ -69840,6 +70087,19 @@ Ext.define('Mobile.view.SelectRecipients', {
                 xtype: 'toolbar',
                 docked: 'bottom',
                 items: [
+                    {
+                        xtype: 'button',
+                        handler: function(button, e) {
+                            var list = button.up("selectrecipients").down("list");
+                            var selected = list.getSelection();
+                            if (selected.length > 0) {
+                                list.deselectAll();
+                            } else {
+                                list.selectAll();
+                            }
+                        },
+                        text: 'All'
+                    },
                     {
                         xtype: 'spacer'
                     },
@@ -70035,13 +70295,15 @@ Ext.define('Mobile.controller.Mail', {
                 if (res.success) {
                     bodyFld.setValue("");
                     me.loadOutMessages();
-                    Ext.Msg.alert("", ReminDoo.T("MessageSent"), function(btn) {
-                        nav.pop();
-                    });
+                    nav.pop();
                 }
             });
         }
     },
+    /*Ext.Msg.alert("",
+                                  ReminDoo.T("MessageSent"),function(btn){
+                                      nav.pop();
+                                  });*/
     onComposeTap: function(button, e, eOpts) {
         var nav = this.getMailNav();
         var p = this.getComposePanel();
@@ -70102,7 +70364,7 @@ Ext.define('Mobile.controller.Mail', {
     selectRecipientsShow: function() {
         var me = this;
         var toList = this.getToList();
-        console.debug("toList", toList);
+        //console.debug("toList",toList);
         this.getMailNav().push(this.getSelectRecipients());
         var list = this.getRecipientlist();
         if (toList.length === 0) {
@@ -70143,9 +70405,11 @@ Ext.define('Mobile.controller.Navigation', {
         ReminDoo.Translate(navigationview);
         ReminDoo.Translate(view);
         if (navigationview.onPush) {
+            //    console.log("calling onPush");
             navigationview.onPush();
-        }
+        } else {}
     },
+    //console.log("no onPush");
     onNavigationviewPop: function(navigationview, view, eOpts) {
         ReminDoo.Translate(navigationview);
         if (navigationview.onPop) {
@@ -70259,6 +70523,81 @@ Ext.define('Mobile.view.InMessageItem', {
 });
 
 /*
+ * File: app/view/RecurrentSheet.js
+ *
+ * This file was generated by Sencha Architect version 3.2.0.
+ * http://www.sencha.com/products/architect/
+ *
+ * This file requires use of the Sencha Touch 2.3.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * details see http://www.sencha.com/license or contact license@sencha.com.
+ *
+ * This file will be auto-generated each and everytime you save your project.
+ *
+ * Do NOT hand edit this file.
+ */
+Ext.define('Mobile.view.RecurrentSheet', {
+    extend: Ext.ActionSheet,
+    alias: 'widget.recurrentsheet',
+    config: {
+        items: [
+            {
+                xtype: 'numberfield',
+                itemId: 'count',
+                label: 'כמות',
+                labelAlign: 'right',
+                labelCls: 'right',
+                value: 4
+            },
+            {
+                xtype: 'selectfield',
+                itemId: 'step',
+                label: 'פסיעה',
+                labelAlign: 'right',
+                labelCls: 'right',
+                value: 7,
+                options: [
+                    {
+                        value: '1',
+                        text: 'יום'
+                    },
+                    {
+                        value: '7',
+                        text: 'שבוע'
+                    }
+                ]
+            },
+            {
+                xtype: 'toolbar',
+                docked: 'bottom',
+                items: [
+                    {
+                        xtype: 'spacer'
+                    },
+                    {
+                        xtype: 'button',
+                        handler: function(button, e) {
+                            button.up("recurrentsheet").hide();
+                        },
+                        text: 'בטל'
+                    },
+                    {
+                        xtype: 'button',
+                        handler: function(button, e) {
+                            var sheet = button.up("recurrentsheet");
+                            var count = sheet.down("#count").getValue();
+                            var step = sheet.down("#step").getValue();
+                            sheet.fireEvent("select", count, step);
+                        },
+                        text: 'עדכן'
+                    }
+                ]
+            }
+        ]
+    }
+});
+
+/*
  * File: app.js
  *
  * This file was generated by Sencha Architect version 3.2.0.
@@ -70310,7 +70649,8 @@ Ext.application({
         'Welcome',
         'RegisterPanel',
         'ComposePanel',
-        'ManageNav'
+        'ManageNav',
+        'RecurrentSheet'
     ],
     controllers: [
         'Account',
@@ -70332,7 +70672,7 @@ Ext.application({
         ReminDoo.deviceType = -1;
         ReminDooInit();
         var me = this;
-        ReminDoo.Version = 46;
+        ReminDoo.Version = 47;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
