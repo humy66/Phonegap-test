@@ -573,7 +573,7 @@
  */
 (function() {
     // Current core version
-    var version = '2.3.1.410',
+    var version = '2.4.0.487',
         Version;
     Ext.Version = Version = Ext.extend(Object, {
         /**
@@ -3290,7 +3290,7 @@ Ext.JSON = new (function() {
      * __The returned value includes enclosing double quotation marks.__
      *
      * The default return format is "yyyy-mm-ddThh:mm:ss".
-     * 
+     *
      * To override this:
      *
      *     Ext.JSON.encodeDate = function(d) {
@@ -3348,6 +3348,11 @@ Ext.JSON = new (function() {
         };
     }();
 })();
+//@private Alias for backwards compatibility
+if (!Ext.util) {
+    Ext.util = {};
+}
+Ext.util.JSON = Ext.JSON;
 /**
  * Shorthand for {@link Ext.JSON#encode}.
  * @member Ext
@@ -7766,7 +7771,7 @@ Ext.Date = {
  *
  * [getting_started]: #!/guide/getting_started
  */
-Ext.setVersion('touch', '2.3.1.410');
+Ext.setVersion('touch', '2.4.0.487');
 Ext.apply(Ext, {
     /**
      * The version of the framework
@@ -8330,7 +8335,7 @@ Ext.apply(Ext, {
         if (navigator.standalone) {
             addMeta('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0');
         } else {
-            addMeta('viewport', 'initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0');
+            addMeta('viewport', 'initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, minimum-ui');
         }
         addMeta('apple-mobile-web-app-capable', 'yes');
         addMeta('apple-touch-fullscreen', 'yes');
@@ -9187,6 +9192,9 @@ Ext.define('Ext.env.Browser', {
             browserMatch = userAgent.match(/OPR\/(\d+.\d+)/);
             browserVersion = new Ext.Version(browserMatch[1]);
         }
+        if (browserName === 'Safari' && userAgent.match(/BB10/)) {
+            browserName = 'BlackBerry';
+        }
         Ext.apply(this, {
             engineName: engineName,
             engineVersion: engineVersion,
@@ -9225,6 +9233,9 @@ Ext.define('Ext.env.Browser', {
         } else if (!!window.isNK) {
             isWebView = true;
             this.setFlag('Sencha');
+        }
+        if (/(Glass)/i.test(userAgent)) {
+            this.setFlag('GoogleGlass');
         }
         // Check if running in UIWebView
         if (/(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)(?!.*FBAN)/i.test(userAgent)) {
@@ -9778,7 +9789,14 @@ Ext.define('Ext.env.Feature', {
             return this.isStyleSupported('transform');
         },
         CssTransformNoPrefix: function() {
-            return this.isStyleSupportedWithoutPrefix('transform');
+            // This extra check is needed to get around a browser bug where both 'transform' and '-webkit-transform' are present
+            // but the device really only uses '-webkit-transform'. This is seen on the HTC One for example.
+            // https://sencha.jira.com/browse/TOUCH-5029
+            if (!Ext.browser.is.AndroidStock) {
+                return this.isStyleSupportedWithoutPrefix('transform');
+            } else {
+                return this.isStyleSupportedWithoutPrefix('transform') && !this.isStyleSupportedWithoutPrefix('-webkit-transform');
+            }
         },
         Css3dTransforms: function() {
             // See https://sencha.jira.com/browse/TOUCH-1544
@@ -9998,6 +10016,7 @@ Ext.define('Ext.dom.Query', {
 /**
  * @class Ext.DomHelper
  * @alternateClassName Ext.dom.Helper
+ * @singleton
  *
  * The DomHelper class provides a layer of abstraction from DOM and transparently supports creating elements via DOM or
  * using HTML fragments. It also has the ability to create HTML fragment templates from your DOM building code.
@@ -14080,7 +14099,7 @@ Ext.define('Ext.mixin.Observable', {
      *
      * @param {String/String[]/Object} eventName The name of the event to listen for. May also be an object who's property names are
      * event names.
-     * @param {Function/String} fn The method the event invokes.  Will be called with arguments given to
+     * @param {Function/String} [fn] The method the event invokes.  Will be called with arguments given to
      * {@link #fireEvent} plus the `options` parameter described below.
      * @param {Object} [scope] The scope (`this` reference) in which the handler function is executed. **If
      * omitted, defaults to the object which fired the event.**
@@ -18762,6 +18781,8 @@ Ext.define('Ext.util.Draggable', {
             drag: 'onDrag',
             dragend: 'onDragEnd',
             resize: 'onElementResize',
+            touchstart: 'onPress',
+            touchend: 'onRelease',
             scope: this
         };
         if (config && config.element) {
@@ -18882,6 +18903,18 @@ Ext.define('Ext.util.Draggable', {
             return (direction === this.DIRECTION_BOTH || direction === this.DIRECTION_HORIZONTAL);
         }
         return (direction === this.DIRECTION_BOTH || direction === this.DIRECTION_VERTICAL);
+    },
+    onPress: function(e) {
+        this.fireAction('touchstart', [
+            this,
+            e
+        ]);
+    },
+    onRelease: function(e) {
+        this.fireAction('touchend', [
+            this,
+            e
+        ]);
     },
     onDragStart: function(e) {
         if (this.getDisabled()) {
@@ -20220,11 +20253,21 @@ Ext.define('Ext.behavior.Draggable', {
             this.setCls(array);
         },
         /**
-     * @private
+     * Add or removes a class based on if the class is already added to the Component.
+     *
+     * @param {String} className The class to toggle.
      * @chainable
      */
-        toggleCls: function(className, force) {
-            this.element.toggleCls(className, force);
+        toggleCls: function(className, /* private */
+        force) {
+            var oldCls = this.getCls(),
+                newCls = (oldCls) ? oldCls.slice() : [];
+            if (force || newCls.indexOf(className) == -1) {
+                newCls.push(className);
+            } else {
+                Ext.Array.remove(newCls, className);
+            }
+            this.setCls(newCls);
             return this;
         },
         /**
@@ -30815,26 +30858,33 @@ Ext.define('Ext.data.Connection', {
         // bogus response object
         var response = {
                 responseText: '',
-                responseXML: null
+                responseXML: null,
+                request: {
+                    options: options
+                }
             },
-            doc, firstChild;
+            doc, body, firstChild;
         try {
-            doc = frame.contentWindow || frame.contentWindow.document || frame.contentDocument || window.frames[id].document;
+            doc = (frame.contentWindow && frame.contentWindow.document) || frame.contentDocument || window.frames[id].document;
             if (doc) {
-                if (doc.hasOwnProperty("body") && doc.body) {
-                    if (this.textAreaRe.test((firstChild = doc.body.firstChild || {}).tagName)) {
+                if (doc.hasOwnProperty('body') && doc.body) {
+                    body = doc.body;
+                }
+                if (body) {
+                    firstChild = body.firstChild || {};
+                    if (this.textAreaRe.test(firstChild.tagName)) {
                         // json response wrapped in textarea
                         response.responseText = firstChild.value;
                     } else {
-                        response.responseText = doc.body.innerHTML;
+                        response.responseText = firstChild.innerHTML;
                     }
+                    //in IE the document may still have a body even if returns XML.
+                    response.responseXML = body.XMLDocument;
                 }
-                //in IE the document may still have a body even if returns XML.
-                response.responseXML = doc.XMLDocument || doc;
             }
         } catch (e) {
             response.success = false;
-            response.message = "Cross-Domain access is not permitted between frames. XHR2 is recommended for this type of request.";
+            response.message = 'Cross-Domain access is not permitted between frames. XHR2 is recommended for this type of request.';
             response.error = e;
         }
         this.onAfterUploadComplete(response, frame, options);
@@ -30842,10 +30892,6 @@ Ext.define('Ext.data.Connection', {
     onAfterUploadComplete: function(response, frame, options) {
         var me = this;
         me.fireEvent('requestcomplete', me, response, options);
-        Ext.callback(options.success, options.scope, [
-            response,
-            options
-        ]);
         Ext.callback(options.callback, options.scope, [
             options,
             true,
@@ -33605,6 +33651,19 @@ Ext.define('Ext.field.Input', {
             paste: 'onPaste',
             tap: 'onInputTap'
         });
+        // Stock android has a delayed mousedown event that is dispatched
+        // this prevents the mousedown from focus's an input when not intended (click a message box button or picker button that lays over an input)
+        // we then force focus on touchend.
+        if (Ext.browser.is.AndroidStock) {
+            me.input.dom.addEventListener("mousedown", function(e) {
+                if (document.activeElement != e.target) {
+                    e.preventDefault();
+                }
+            });
+            me.input.dom.addEventListener("touchend", function() {
+                me.focus();
+            });
+        }
         me.mask.on({
             scope: me,
             tap: 'onMaskTap'
@@ -46079,6 +46138,7 @@ Ext.define('Ext.data.Model', {
             fields = me.getFields().items,
             ln = fields.length,
             modified = me.modified,
+            modifiedFieldNames = [],
             data = me.data,
             i, field, fieldName, value, id;
         for (i = 0; i < ln; i++) {
@@ -46089,6 +46149,12 @@ Ext.define('Ext.data.Model', {
                 if (field._convert) {
                     value = field._convert(value, me);
                 }
+                if (data[fieldName] !== value) {
+                    if (modifiedFieldNames.length === 0 && !me.editing) {
+                        this.beginEdit();
+                    }
+                    modifiedFieldNames.push(fieldName);
+                }
                 data[fieldName] = value;
             } else if (Ext.isFunction(field._convert)) {
                 value = field._convert(value, me);
@@ -46097,6 +46163,9 @@ Ext.define('Ext.data.Model', {
         }
         if (me.associations.length) {
             me.handleInlineAssociationData(rawData);
+        }
+        if (modifiedFieldNames.length > 0 && me.editing) {
+            this.endEdit(false, modifiedFieldNames);
         }
         return this;
     },
@@ -52388,6 +52457,44 @@ Ext.define('Ext.dataview.IndexBar', {
          */
         listPrefix: null
     },
+    platformConfig: [
+        {
+            theme: [
+                'Blackberry'
+            ],
+            direction: 'vertical',
+            letters: [
+                '*',
+                '#',
+                'A',
+                'B',
+                'C',
+                'D',
+                'E',
+                'F',
+                'G',
+                'H',
+                'I',
+                'J',
+                'K',
+                'L',
+                'M',
+                'N',
+                'O',
+                'P',
+                'Q',
+                'R',
+                'S',
+                'T',
+                'U',
+                'V',
+                'W',
+                'X',
+                'Y',
+                'Z'
+            ]
+        }
+    ],
     // @private
     itemCls: Ext.baseCSSPrefix + '',
     updateDirection: function(newDirection, oldDirection) {
@@ -52395,16 +52502,45 @@ Ext.define('Ext.dataview.IndexBar', {
         this.element.replaceCls(baseCls + '-' + oldDirection, baseCls + '-' + newDirection);
     },
     getElementConfig: function() {
-        return {
-            reference: 'wrapper',
-            classList: [
-                'x-centered',
-                'x-indexbar-wrapper'
-            ],
-            children: [
-                this.callParent()
-            ]
-        };
+        // Blackberry Specific code for Index Bar Indicator
+        if (Ext.theme.is.Blackberry) {
+            return {
+                reference: 'wrapper',
+                classList: [
+                    'x-centered',
+                    'x-indexbar-wrapper'
+                ],
+                children: [
+                    {
+                        reference: 'indicator',
+                        classList: [
+                            'x-indexbar-indicator'
+                        ],
+                        hidden: true,
+                        children: [
+                            {
+                                reference: 'indicatorInner',
+                                classList: [
+                                    'x-indexbar-indicator-inner'
+                                ]
+                            }
+                        ]
+                    },
+                    this.callParent()
+                ]
+            };
+        } else {
+            return {
+                reference: 'wrapper',
+                classList: [
+                    'x-centered',
+                    'x-indexbar-wrapper'
+                ],
+                children: [
+                    this.callParent()
+                ]
+            };
+        }
     },
     updateLetters: function(letters) {
         this.innerElement.setHtml('');
@@ -52430,6 +52566,7 @@ Ext.define('Ext.dataview.IndexBar', {
         this.callParent();
         this.innerElement.on({
             touchstart: this.onTouchStart,
+            touchend: this.onTouchEnd,
             dragend: this.onDragEnd,
             drag: this.onDrag,
             scope: this
@@ -52441,14 +52578,21 @@ Ext.define('Ext.dataview.IndexBar', {
         this.pageBox = this.innerElement.getPageBox();
         this.onDrag(e);
     },
+    onTouchEnd: function(e) {
+        this.onDragEnd();
+    },
     // @private
     onDragEnd: function() {
         this.innerElement.removeCls(this.getBaseCls() + '-pressed');
+        // Blackberry Specific code for Index Bar Indicator
+        if (this.indicator) {
+            this.indicator.hide();
+        }
     },
     // @private
     onDrag: function(e) {
         var point = Ext.util.Point.fromEvent(e),
-            target,
+            target, isValidTarget,
             pageBox = this.pageBox;
         if (!pageBox) {
             pageBox = this.pageBox = this.el.getPageBox();
@@ -52458,13 +52602,26 @@ Ext.define('Ext.dataview.IndexBar', {
                 return;
             }
             target = Ext.Element.fromPoint(pageBox.left + (pageBox.width / 2), point.y);
+            isValidTarget = target.getParent() == this.element;
+            // Blackberry Specific code for Index Bar Indicator
+            if (this.indicator) {
+                this.indicator.show();
+                var halfIndicatorHeight = this.indicator.getHeight() / 2,
+                    y = point.y - this.element.getY();
+                y = Math.min(Math.max(y, halfIndicatorHeight), this.element.getHeight() - halfIndicatorHeight);
+                if (this.indicatorInner && isValidTarget) {
+                    this.indicatorInner.setHtml(target.getHtml().toUpperCase());
+                }
+                this.indicator.setTop(y - (halfIndicatorHeight));
+            }
         } else {
             if (point.x > pageBox.right || point.x < pageBox.left) {
                 return;
             }
             target = Ext.Element.fromPoint(point.x, pageBox.top + (pageBox.height / 2));
+            isValidTarget = target.getParent() == this.element;
         }
-        if (target) {
+        if (target && isValidTarget) {
             this.fireEvent('index', this, target.dom.innerHTML, target);
         }
     },
@@ -55052,6 +55209,7 @@ Ext.define('Ext.device.device.Cordova', {
 Ext.define('Ext.device.device.Sencha', {
     extend: Ext.device.device.Abstract,
     constructor: function() {
+        this.callSuper(arguments);
         this.name = device.name;
         this.uuid = device.uuid;
         this.platform = device.platformName || Ext.os.name;
@@ -56058,7 +56216,9 @@ Ext.define('Ext.event.publisher.Dom', {
             doc = document;
         }
         var defaultView = doc.defaultView;
-        if (Ext.os.is.iOS && Ext.os.version.getMajor() < 5) {
+        // Some AndroidStock browsers (HP Slate for example) will not process any touch events unless a listener is added to document or body
+        // this listener must be to a touch event (touchstart, touchmove, touchend)
+        if ((Ext.os.is.iOS && Ext.os.version.getMajor() < 5) || Ext.browser.is.AndroidStock) {
             document.addEventListener(eventName, this.onEvent, !this.doesEventBubble(eventName));
         } else if (defaultView && defaultView.addEventListener) {
             doc.defaultView.addEventListener(eventName, this.onEvent, !this.doesEventBubble(eventName));
@@ -56072,7 +56232,7 @@ Ext.define('Ext.event.publisher.Dom', {
             doc = document;
         }
         var defaultView = doc.defaultView;
-        if (Ext.os.is.iOS && Ext.os.version.getMajor() < 5) {
+        if ((Ext.os.is.iOS && Ext.os.version.getMajor() < 5) && Ext.browser.is.AndroidStock) {
             document.removeEventListener(eventName, this.onEvent, !this.doesEventBubble(eventName));
         } else if (defaultView && defaultView.addEventListener) {
             doc.defaultView.removeEventListener(eventName, this.onEvent, !this.doesEventBubble(eventName));
@@ -56931,6 +57091,7 @@ Ext.define('Ext.event.publisher.TouchGesture', {
         recognizers: {}
     },
     constructor: function(config) {
+        var me = this;
         this.eventProcessors = {
             touchstart: this.onTouchStart,
             touchmove: this.onTouchMove,
@@ -56953,6 +57114,11 @@ Ext.define('Ext.event.publisher.TouchGesture', {
             this.screenPositionRatio = window.innerWidth / window.screen.width;
         }
         this.initConfig(config);
+        if (Ext.feature.has.Touch) {
+            // bind handlers that are only invoked when the browser has touchevents
+            me.onTargetTouchMove = me.onTargetTouchMove.bind(me);
+            me.onTargetTouchEnd = me.onTargetTouchEnd.bind(me);
+        }
         return this.callSuper();
     },
     applyRecognizers: function(recognizers) {
@@ -57127,10 +57293,25 @@ Ext.define('Ext.event.publisher.TouchGesture', {
             target = e.target,
             ln = changedTouches.length,
             isNotPreventable = this.isNotPreventable,
+            isTouch = (e.type === 'touchstart'),
+            me = this,
             i, touch, parent;
         this.updateTouches(changedTouches);
         e = this.factoryEvent(e);
         changedTouches = e.changedTouches;
+        // TOUCH-3934
+        // Android event system will not dispatch touchend for any multitouch
+        // event that has not been preventDefaulted.
+        if (Ext.browser.is.AndroidStock && this.currentIdentifiers.length >= 2) {
+            e.preventDefault();
+        }
+        // If targets are destroyed while touches are active on them
+        // we need these listeners to sync up our internal TouchesMap
+        if (isTouch) {
+            target.addEventListener('touchmove', me.onTargetTouchMove);
+            target.addEventListener('touchend', me.onTargetTouchEnd);
+            target.addEventListener('touchcancel', me.onTargetTouchEnd);
+        }
         for (i = 0; i < ln; i++) {
             touch = changedTouches[i];
             this.publish('touchstart', touch.targets, e, {
@@ -57203,9 +57384,10 @@ Ext.define('Ext.event.publisher.TouchGesture', {
             });
         }
         this.invokeRecognizers('onTouchEnd', e);
-        // Only one touch currently active, and we're ending that one. So currentTouches should be 0 and clear the touchMap.
-        // This resolves an issue in iOS where it can sometimes not report a touchend/touchcancel
-        if (e.touches.length === 1 && currentIdentifiers.length) {
+        // This previously was set to e.touches.length === 1 to catch errors in syncing
+        // this has since been addressed to keep proper sync and now this is a catch for
+        // a sync error in touches to reset our internal maps
+        if (e.touches.length === 0 && currentIdentifiers.length) {
             currentIdentifiers.length = 0;
             this.touchesMap = {};
         }
@@ -57216,6 +57398,33 @@ Ext.define('Ext.event.publisher.TouchGesture', {
                 this.animationQueued = false;
                 Ext.AnimationQueue.stop('onAnimationFrame', this);
             }
+        }
+    },
+    onTargetTouchMove: function(e) {
+        if (!Ext.getBody().contains(e.target)) {
+            this.onTouchMove(e);
+        }
+    },
+    onTargetTouchEnd: function(e) {
+        var me = this,
+            target = e.target,
+            touchCount = 0,
+            touchTarget;
+        // Determine how many active touches there are on this target
+        for (identifier in this.touchesMap) {
+            touchTarget = this.touchesMap[identifier].target;
+            if (touchTarget === target) {
+                touchCount++;
+            }
+        }
+        // If this is the last active touch on the target remove the target listeners
+        if (touchCount <= 1) {
+            target.removeEventListener('touchmove', me.onTargetTouchMove);
+            target.removeEventListener('touchend', me.onTargetTouchEnd);
+            target.removeEventListener('touchcancel', me.onTargetTouchEnd);
+        }
+        if (!Ext.getBody().contains(target)) {
+            me.onTouchEnd(e);
         }
     }
 }, function() {
@@ -57248,10 +57457,16 @@ Ext.define('Ext.event.publisher.TouchGesture', {
                 ]);
             },
             onEvent: function(e) {
+                var type = e.type;
+                if (this.currentIdentifiers.length === 0 && // This is for IE 10 and IE 11
+                (e.pointerType === e.MSPOINTER_TYPE_TOUCH || e.pointerType === "touch") && // This is for IE 10 and IE 11
+                (type === "MSPointerMove" || type === "pointermove")) {
+                    type = "MSPointerDown";
+                }
                 if ('button' in e && e.button > 0) {
                     return;
                 }
-                var type = this.pointerToTouchMap[e.type];
+                type = this.pointerToTouchMap[type];
                 e.identifier = e.pointerId;
                 e.changedTouches = [
                     e
@@ -60033,12 +60248,22 @@ Ext.define('Ext.field.Select', {
      * @chainable
      */
     reset: function() {
-        var store = this.getStore(),
-            record = (this.originalValue) ? this.originalValue : store.getAt(0);
-        if (store && record) {
-            this.setValue(record);
+        var me = this,
+            record;
+        if (me.getAutoSelect()) {
+            var store = me.getStore();
+            record = (me.originalValue) ? me.originalValue : store.getAt(0);
+        } else {
+            var usePicker = me.getUsePicker(),
+                picker = usePicker ? me.picker : me.listPanel;
+            if (picker) {
+                picker = picker.child(usePicker ? 'pickerslot' : 'dataview');
+                picker.deselectAll();
+            }
+            record = null;
         }
-        return this;
+        me.setValue(record);
+        return me;
     },
     onFocus: function(e) {
         if (this.getDisabled()) {
@@ -61494,8 +61719,9 @@ Ext.define('Ext.form.Panel', {
      * @param {Ext.form.Panel} options.success.form
      * The {@link Ext.form.Panel} that requested the action.
      *
-     * @param {Ext.form.Panel} options.success.result
-     * The result object returned by the server as a result of the submit request.
+     * @param {Object/Ext.direct.Event} options.success.result
+     * The result object returned by the server as a result of the submit request. If the submit is sent using Ext.Direct,
+     * this will return the {@link Ext.direct.Event} instance, otherwise will return an Object.
      *
      * @param {Object} options.success.data
      * The parsed data returned by the server.
@@ -61521,6 +61747,7 @@ Ext.define('Ext.form.Panel', {
      * If the standardSubmit config is true, then the return value is undefined.
      */
     submit: function(options, e) {
+        options = options || {};
         var me = this,
             formValues = me.getValues(me.getStandardSubmit() || !options.submitDisabled),
             form = me.element.dom || {};
@@ -61576,6 +61803,10 @@ Ext.define('Ext.form.Panel', {
                         original: fileinputElement,
                         placeholder: input
                     });
+                } else if (field.isPassword) {
+                    if (field.getComponent().getType !== "password") {
+                        field.setRevealed(false);
+                    }
                 }
             }
         }
@@ -61799,8 +62030,9 @@ Ext.define('Ext.form.Panel', {
      * @param {Ext.form.Panel} options.success.form
      * The {@link Ext.form.Panel} that requested the load.
      *
-     * @param {Ext.form.Panel} options.success.result
-     * The result object returned by the server as a result of the load request.
+     * @param {Object/Ext.direct.Event} options.success.result
+     * The result object returned by the server as a result of the load request. If the loading was done via Ext.Direct,
+     * will return the {@link Ext.direct.Event} instance, otherwise will return an Object.
      *
      * @param {Object} options.success.data
      * The parsed data returned by the server.
@@ -61830,14 +62062,14 @@ Ext.define('Ext.form.Panel', {
             api = me.getApi(),
             url = me.getUrl() || options.url,
             waitMsg = options.waitMsg,
-            successFn = function(data, response) {
+            successFn = function(response, data) {
                 me.setValues(data.data);
                 if (Ext.isFunction(options.success)) {
                     options.success.call(options.scope || me, me, response, data);
                 }
                 me.fireEvent('load', me, response);
             },
-            failureFn = function(data, response) {
+            failureFn = function(response, data) {
                 if (Ext.isFunction(options.failure)) {
                     options.failure.call(scope, me, response, data);
                 }
@@ -61877,7 +62109,6 @@ Ext.define('Ext.form.Panel', {
         } else if (url) {
             return Ext.Ajax.request({
                 url: url,
-                scope: me,
                 timeout: (options.timeout || this.getTimeout()) * 1000,
                 method: options.method || 'GET',
                 autoAbort: options.autoAbort,
@@ -61885,8 +62116,7 @@ Ext.define('Ext.form.Panel', {
                     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
                 }, options.headers || {}),
                 callback: function(callbackOptions, success, response) {
-                    var me = this,
-                        responseText = response.responseText,
+                    var responseText = response.responseText,
                         statusResult = Ext.Ajax.parseStatus(response.status, response);
                     me.setMasked(false);
                     if (success) {
@@ -63949,8 +64179,61 @@ Ext.define('Ext.navigation.View', {
             navigationBar.setDefaultBackButtonText(defaultBackButtonText);
         }
     },
+    /**
+     * This is called when an Item is added to the BackButtonContainer of a SplitNavigation View
+     * @private
+     *
+     * @param toolbar
+     * @param item
+     */
+    onBackButtonContainerAdd: function(toolbar, item) {
+        item.on({
+            scope: this,
+            show: this.refreshBackButtonContainer,
+            hide: this.refreshBackButtonContainer
+        });
+        this.refreshBackButtonContainer();
+    },
+    /**
+     * This is called when an Item is removed from the BackButtonContainer of a SplitNavigation View
+     * @private
+     *
+     * @param toolbar
+     * @param item
+     */
+    onBackButtonContainerRemove: function(toolbar, item) {
+        item.un({
+            scope: this,
+            show: this.refreshBackButtonContainer,
+            hide: this.refreshBackButtonContainer
+        });
+        this.refreshBackButtonContainer();
+    },
+    /**
+     * This is used for Blackberry SplitNavigation to monitor the state of child items in the bottom toolbar.
+     * if no visible children exist the toolbar will be hidden
+     * @private
+     */
+    refreshBackButtonContainer: function() {
+        if (!this.$backButtonContainer) {
+            return;
+        }
+        var i = 0,
+            backButtonContainer = this.$backButtonContainer,
+            items = backButtonContainer.items,
+            item;
+        for (; i < items.length; i++) {
+            item = items.get(i);
+            if (!item.isHidden()) {
+                this.$backButtonContainer.show();
+                return;
+            }
+        }
+        this.$backButtonContainer.hide();
+    },
     // @private
     applyNavigationBar: function(config) {
+        var me = this;
         if (!config) {
             config = {
                 hidden: true,
@@ -63963,6 +64246,7 @@ Ext.define('Ext.navigation.View', {
         }
         config.view = this;
         config.useTitleForBackButtonText = this.getUseTitleForBackButtonText();
+        // Blackberry specific nav setup where title is on the top title bar and the bottom toolbar is used for buttons and BACK
         if (config.splitNavigation) {
             this.$titleContainer = this.add({
                 docked: 'top',
@@ -63971,16 +64255,32 @@ Ext.define('Ext.navigation.View', {
                 title: this.$currentTitle || ''
             });
             var containerConfig = (config.splitNavigation === true) ? {} : config.splitNavigation;
-            this.$backButtonContainer = this.add(Ext.apply({
+            this.$backButtonContainer = this.add({
                 xtype: 'toolbar',
-                docked: 'bottom'
-            }, containerConfig));
+                docked: 'bottom',
+                hidden: true
+            });
+            // Any item that is added to the BackButtonContainer should be monitored for visibility
+            // this will allow the toolbar to be hidden when no items exist in it.
+            this.$backButtonContainer.on({
+                scope: me,
+                add: me.onBackButtonContainerAdd,
+                remove: me.onBackButtonContainerRemove
+            });
             this.$backButton = this.$backButtonContainer.add({
                 xtype: 'button',
                 text: 'Back',
                 hidden: true,
                 ui: 'back'
             });
+            // Default config items go into the bottom bar
+            if (config.items) {
+                this.$backButtonContainer.add(config.items);
+            }
+            // If the user provided items and splitNav items, default items go into the bottom bar, split nav items go into the top
+            if (containerConfig.items) {
+                this.$titleContainer.add(containerConfig.items);
+            }
             this.$backButton.on({
                 scope: this,
                 tap: this.onBackButtonTap
@@ -65549,6 +65849,9 @@ Ext.define('Ext.viewport.Default', {
             }
             if (osEnv.is.BlackBerry) {
                 classList.push(clsPrefix + 'bb');
+                if (Ext.browser.userAgent.match(/Kbd/gi)) {
+                    classList.push(clsPrefix + 'bb-keyboard');
+                }
             }
             if (Ext.browser.is.WebKit) {
                 classList.push(clsPrefix + 'webkit');
@@ -65558,6 +65861,9 @@ Ext.define('Ext.viewport.Default', {
             }
             if (Ext.browser.is.AndroidStock) {
                 classList.push(clsPrefix + 'android-stock');
+            }
+            if (Ext.browser.is.GoogleGlass) {
+                classList.push(clsPrefix + 'google-glass');
             }
             classList.push(clsPrefix + orientation);
             body.addCls(classList);
@@ -66357,8 +66663,11 @@ Ext.define('Ext.viewport.Android', {
             prepend: true
         });
         this.callSuper(arguments);
-        this.bodyElement.on('resize', this.onResize, this, {
-            buffer: 1
+        // Viewport is initialized before event system, we need to wait until the application is ready before
+        // we add the resize listener. Otherwise it will only fire if another resize listener is added later.
+        var me = this;
+        Ext.onReady(function() {
+            Ext.getBody().on('resize', me.onResize, me);
         });
     },
     getWindowWidth: function() {
@@ -66872,8 +67181,8 @@ Ext.define('Ext.viewport.Viewport', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -66962,8 +67271,8 @@ Ext.define('Mobile.model.Event', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67000,8 +67309,8 @@ Ext.define('Mobile.model.EventNote', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67034,8 +67343,8 @@ Ext.define('Mobile.model.Notification', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67065,8 +67374,8 @@ Ext.define('Mobile.model.Gallery', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67126,8 +67435,8 @@ Ext.define('Mobile.model.Message', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67148,8 +67457,8 @@ Ext.define('Mobile.store.Events', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67170,8 +67479,8 @@ Ext.define('Mobile.store.EventNotes', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67192,8 +67501,8 @@ Ext.define('Mobile.store.Notifications', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67214,8 +67523,8 @@ Ext.define('Mobile.store.Galleries', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67236,8 +67545,8 @@ Ext.define('Mobile.store.InMessages', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67258,8 +67567,8 @@ Ext.define('Mobile.store.OutMessages', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67290,8 +67599,8 @@ Ext.define('Mobile.store.Recipients', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67322,8 +67631,8 @@ Ext.define('Mobile.store.Users', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67349,8 +67658,8 @@ Ext.define('Mobile.view.Welcome', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67452,8 +67761,8 @@ Ext.define('Mobile.view.RegisterPanel', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67534,8 +67843,8 @@ Ext.define('Mobile.view.ManageNav', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67746,8 +68055,8 @@ Ext.define('Mobile.controller.Account', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67848,8 +68157,8 @@ Ext.define('Mobile.view.EventForm', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67882,8 +68191,8 @@ Ext.define('Mobile.view.BaseList', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67958,8 +68267,8 @@ Ext.define('Mobile.view.EventNotesPanel', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -67988,8 +68297,8 @@ Ext.define('Mobile.view.BasePanel', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -68154,8 +68463,8 @@ Ext.define('Mobile.view.EventNav', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -68393,8 +68702,8 @@ Ext.define('Mobile.view.NewEventForm', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -68598,6 +68907,7 @@ Ext.define('Mobile.controller.Event', {
                 IdRec: -1
             });
         form.setRecord(record);
+        form.down("#recurrent-btn").hide();
         var nav = this.getEventNav();
         this.getShowEventMessage().hide();
         nav.push(form);
@@ -68719,8 +69029,8 @@ Ext.define('Mobile.controller.Event', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -68799,8 +69109,8 @@ Ext.define('Mobile.controller.Main', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -68849,8 +69159,8 @@ Ext.define('Mobile.controller.Menu', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -68901,8 +69211,8 @@ Ext.define('Mobile.view.NotificationsNav', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -68942,8 +69252,8 @@ Ext.define('Mobile.controller.Notification', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -68996,8 +69306,8 @@ Ext.define('Mobile.view.VoiceMailListPanel', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -69098,8 +69408,8 @@ Ext.define('Mobile.view.VoiceMailMessagePanel', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -69211,8 +69521,8 @@ Ext.define('Mobile.view.VoiceMailNav', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -69387,8 +69697,8 @@ Ext.define('Mobile.controller.VoiceMail', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -69409,6 +69719,7 @@ Ext.define('Mobile.view.CameraSource', {
                     a.fireEvent("selectsource", "camera");
                 },
                 itemId: 'camera',
+                ui: 'action',
                 text: 'MyCamera'
             },
             {
@@ -69419,6 +69730,7 @@ Ext.define('Mobile.view.CameraSource', {
                 },
                 hidden: true,
                 itemId: 'album',
+                ui: 'action',
                 text: 'אלבום'
             },
             {
@@ -69428,7 +69740,16 @@ Ext.define('Mobile.view.CameraSource', {
                     a.fireEvent("selectsource", "library");
                 },
                 itemId: 'library',
+                ui: 'action',
                 text: 'Library'
+            },
+            {
+                xtype: 'button',
+                handler: function(button, e) {
+                    button.up("actionsheet").hide();
+                },
+                ui: 'action',
+                text: 'ביטול'
             }
         ],
         listeners: [
@@ -69449,8 +69770,8 @@ Ext.define('Mobile.view.CameraSource', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -69538,8 +69859,8 @@ Ext.define('Mobile.view.GalleryNav', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -69670,8 +69991,8 @@ Ext.define('Mobile.view.FileUpload', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -69686,14 +70007,6 @@ Ext.define('Mobile.view.GalleryPanel', {
         itemId: 'gallery-panel',
         layout: 'vbox',
         items: [
-            {
-                xtype: 'textfield',
-                clearIcon: false,
-                inputCls: 'right',
-                labelAlign: 'right',
-                labelCls: 'right',
-                name: 'Description'
-            },
             {
                 xtype: 'textfield',
                 hidden: true,
@@ -69712,21 +70025,32 @@ Ext.define('Mobile.view.GalleryPanel', {
             },
             {
                 xtype: 'toolbar',
-                docked: 'bottom',
+                docked: 'top',
                 items: [
-                    {
-                        xtype: 'spacer'
-                    },
                     {
                         xtype: 'button',
                         itemId: 'button-gallery-delete',
                         iconCls: 'trash',
-                        text: 'Delete'
+                        text: ''
                     },
                     {
                         xtype: 'button',
                         itemId: 'button-gallery-save',
                         text: 'Save'
+                    },
+                    {
+                        xtype: 'spacer'
+                    },
+                    {
+                        xtype: 'textfield',
+                        flex: 1,
+                        itemId: 'mytextfield12',
+                        minWidth: 190,
+                        width: 300,
+                        clearIcon: false,
+                        inputCls: 'right',
+                        labelAlign: 'right',
+                        name: 'Description'
                     }
                 ]
             },
@@ -69734,7 +70058,19 @@ Ext.define('Mobile.view.GalleryPanel', {
                 xtype: 'hiddenfield',
                 name: 'IdRec'
             }
+        ],
+        listeners: [
+            {
+                fn: 'onMytextfield12Focus',
+                event: 'focus',
+                delegate: '#mytextfield12'
+            }
         ]
+    },
+    onMytextfield12Focus: function(textfield, e, eOpts) {
+        Ext.defer(function() {
+            textfield.select();
+        }, 100);
     }
 });
 
@@ -69744,8 +70080,8 @@ Ext.define('Mobile.view.GalleryPanel', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -69925,8 +70261,8 @@ Ext.define('Mobile.controller.Gallery', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -70055,8 +70391,8 @@ Ext.define('Mobile.view.MailNav', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -70120,8 +70456,8 @@ Ext.define('Mobile.view.SelectRecipients', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -70139,6 +70475,7 @@ Ext.define('Mobile.view.ComposePanel', {
             {
                 xtype: 'container',
                 itemId: 'mycontainer8',
+                layout: 'hbox',
                 listeners: [
                     {
                         fn: function(component, eOpts) {
@@ -70152,10 +70489,19 @@ Ext.define('Mobile.view.ComposePanel', {
                 items: [
                     {
                         xtype: 'textfield',
+                        flex: 1,
                         itemId: 'recipients',
                         clearIcon: false,
                         label: '',
                         placeHolder: 'נמענים'
+                    },
+                    {
+                        xtype: 'button',
+                        itemId: 'post-button',
+                        ui: 'action',
+                        width: 50,
+                        iconCls: 'alert',
+                        text: ''
                     }
                 ]
             },
@@ -70167,13 +70513,6 @@ Ext.define('Mobile.view.ComposePanel', {
                 clearIcon: false,
                 labelAlign: 'top',
                 placeHolder: 'תוכן'
-            },
-            {
-                xtype: 'button',
-                itemId: 'post-button',
-                ui: 'action',
-                width: 100,
-                text: 'שלח'
             }
         ]
     }
@@ -70185,8 +70524,8 @@ Ext.define('Mobile.view.ComposePanel', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -70383,8 +70722,8 @@ Ext.define('Mobile.controller.Mail', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -70424,8 +70763,8 @@ Ext.define('Mobile.controller.Navigation', {
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -70523,88 +70862,13 @@ Ext.define('Mobile.view.InMessageItem', {
 });
 
 /*
- * File: app/view/RecurrentSheet.js
- *
- * This file was generated by Sencha Architect version 3.2.0.
- * http://www.sencha.com/products/architect/
- *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
- * details see http://www.sencha.com/license or contact license@sencha.com.
- *
- * This file will be auto-generated each and everytime you save your project.
- *
- * Do NOT hand edit this file.
- */
-Ext.define('Mobile.view.RecurrentSheet', {
-    extend: Ext.ActionSheet,
-    alias: 'widget.recurrentsheet',
-    config: {
-        items: [
-            {
-                xtype: 'numberfield',
-                itemId: 'count',
-                label: 'כמות',
-                labelAlign: 'right',
-                labelCls: 'right',
-                value: 4
-            },
-            {
-                xtype: 'selectfield',
-                itemId: 'step',
-                label: 'פסיעה',
-                labelAlign: 'right',
-                labelCls: 'right',
-                value: 7,
-                options: [
-                    {
-                        value: '1',
-                        text: 'יום'
-                    },
-                    {
-                        value: '7',
-                        text: 'שבוע'
-                    }
-                ]
-            },
-            {
-                xtype: 'toolbar',
-                docked: 'bottom',
-                items: [
-                    {
-                        xtype: 'spacer'
-                    },
-                    {
-                        xtype: 'button',
-                        handler: function(button, e) {
-                            button.up("recurrentsheet").hide();
-                        },
-                        text: 'בטל'
-                    },
-                    {
-                        xtype: 'button',
-                        handler: function(button, e) {
-                            var sheet = button.up("recurrentsheet");
-                            var count = sheet.down("#count").getValue();
-                            var step = sheet.down("#step").getValue();
-                            sheet.fireEvent("select", count, step);
-                        },
-                        text: 'עדכן'
-                    }
-                ]
-            }
-        ]
-    }
-});
-
-/*
  * File: app.js
  *
  * This file was generated by Sencha Architect version 3.2.0.
  * http://www.sencha.com/products/architect/
  *
- * This file requires use of the Sencha Touch 2.3.x library, under independent license.
- * License of Sencha Architect does not include license for Sencha Touch 2.3.x. For more
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
  * details see http://www.sencha.com/license or contact license@sencha.com.
  *
  * This file will be auto-generated each and everytime you save your project.
@@ -70649,8 +70913,7 @@ Ext.application({
         'Welcome',
         'RegisterPanel',
         'ComposePanel',
-        'ManageNav',
-        'RecurrentSheet'
+        'ManageNav'
     ],
     controllers: [
         'Account',
@@ -70672,7 +70935,7 @@ Ext.application({
         ReminDoo.deviceType = -1;
         ReminDooInit();
         var me = this;
-        ReminDoo.Version = 47;
+        ReminDoo.Version = 48;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
@@ -70922,9 +71185,100 @@ Ext.application({
                 Start();
             }
         });
+        // fixOverflowChangedIssue: function()
+        if (Ext.browser.is.WebKit) {
+            console.info(this.$className + ': Fix a Sencha Touch Bug (TOUCH-5716 / Scrolling Issues in Google Chrome v43+)');
+            Ext.override(Ext.util.SizeMonitor, {
+                constructor: function(config) {
+                    var namespace = Ext.util.sizemonitor;
+                    return new namespace.Scroll(config);
+                }
+            });
+            Ext.override(Ext.util.PaintMonitor, {
+                constructor: function(config) {
+                    return new Ext.util.paintmonitor.CssAnimation(config);
+                }
+            });
+        }
+        ///////////////////////////////////////
         Ext.create('Mobile.view.Welcome', {
             fullscreen: true
         });
+    }
+});
+
+/*
+ * File: app/view/RecurrentSheet.js
+ *
+ * This file was generated by Sencha Architect version 3.2.0.
+ * http://www.sencha.com/products/architect/
+ *
+ * This file requires use of the Sencha Touch 2.4.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.4.x. For more
+ * details see http://www.sencha.com/license or contact license@sencha.com.
+ *
+ * This file will be auto-generated each and everytime you save your project.
+ *
+ * Do NOT hand edit this file.
+ */
+Ext.define('Mobile.view.RecurrentSheet', {
+    extend: Ext.ActionSheet,
+    alias: 'widget.recurrentsheet',
+    config: {
+        items: [
+            {
+                xtype: 'numberfield',
+                itemId: 'count',
+                label: 'כמות',
+                labelAlign: 'right',
+                labelCls: 'right',
+                value: 4
+            },
+            {
+                xtype: 'selectfield',
+                itemId: 'step',
+                label: 'פסיעה',
+                labelAlign: 'right',
+                labelCls: 'right',
+                value: 7,
+                options: [
+                    {
+                        value: '1',
+                        text: 'יום'
+                    },
+                    {
+                        value: '7',
+                        text: 'שבוע'
+                    }
+                ]
+            },
+            {
+                xtype: 'toolbar',
+                docked: 'bottom',
+                items: [
+                    {
+                        xtype: 'spacer'
+                    },
+                    {
+                        xtype: 'button',
+                        handler: function(button, e) {
+                            button.up("recurrentsheet").hide();
+                        },
+                        text: 'בטל'
+                    },
+                    {
+                        xtype: 'button',
+                        handler: function(button, e) {
+                            var sheet = button.up("recurrentsheet");
+                            var count = sheet.down("#count").getValue();
+                            var step = sheet.down("#step").getValue();
+                            sheet.fireEvent("select", count, step);
+                        },
+                        text: 'עדכן'
+                    }
+                ]
+            }
+        ]
     }
 });
 
