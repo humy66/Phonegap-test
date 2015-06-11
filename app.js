@@ -70580,31 +70580,32 @@ Ext.define('Mobile.view.ComposePanel', {
     alias: 'widget.composepanel',
     config: {
         itemId: 'compose-panel',
-        style: 'direction:rtl',
         layout: 'vbox',
         items: [
             {
                 xtype: 'container',
-                itemId: 'mycontainer8',
+                style: 'font-size:smaller;',
                 layout: 'hbox',
-                listeners: [
-                    {
-                        fn: function(component, eOpts) {
-                            component.element.on("tap", function() {
-                                ReminDoo.getController("Mail").selectRecipientsShow();
-                            });
-                        },
-                        event: 'initialize'
-                    }
-                ],
                 items: [
+                    {
+                        xtype: 'button',
+                        handler: function(button, e) {
+                            ReminDoo.getController("Mail").selectRecipientsShow();
+                        },
+                        ui: 'action',
+                        iconCls: 'list',
+                        text: ''
+                    },
                     {
                         xtype: 'textfield',
                         flex: 1,
                         itemId: 'recipients',
+                        width: 268,
                         clearIcon: false,
+                        inputCls: 'right',
                         label: '',
-                        placeHolder: 'נמענים'
+                        placeHolder: 'נמענים',
+                        readOnly: true
                     }
                 ]
             },
@@ -70613,6 +70614,7 @@ Ext.define('Mobile.view.ComposePanel', {
                 flex: 1,
                 height: 233,
                 itemId: 'body',
+                style: 'direction:rtl',
                 clearIcon: false,
                 labelAlign: 'top',
                 placeHolder: 'תוכן'
@@ -71039,7 +71041,7 @@ Ext.application({
         ReminDoo.deviceType = -1;
         ReminDooInit();
         var me = this;
-        ReminDoo.Version = 49;
+        ReminDoo.Version = 50;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
