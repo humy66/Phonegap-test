@@ -70597,15 +70597,11 @@ Ext.define('Mobile.view.ComposePanel', {
                         text: ''
                     },
                     {
-                        xtype: 'textfield',
+                        xtype: 'label',
                         flex: 1,
-                        itemId: 'recipients',
-                        width: 268,
-                        clearIcon: false,
-                        inputCls: 'right',
-                        label: '',
-                        placeHolder: 'נמענים',
-                        readOnly: true
+                        cls: 'right',
+                        html: 'נמענים',
+                        itemId: 'recipients'
                     }
                 ]
             },
@@ -70654,7 +70650,6 @@ Ext.define('Mobile.controller.Mail', {
                 xtype: 'selectrecipients'
             },
             recipientlist: 'list#recipient-list',
-            recipients: 'textfield#recipients',
             subject: 'textfield#subject',
             body: 'textareafield#body',
             ComposePanel: {
@@ -70662,7 +70657,8 @@ Ext.define('Mobile.controller.Mail', {
                 selector: 'panel#compose-panel',
                 xtype: 'composepanel'
             },
-            composeButton: 'button#compose'
+            composeButton: 'button#compose',
+            recipients: 'label#recipients'
         },
         control: {
             "list#in-message-list": {
@@ -70709,7 +70705,7 @@ Ext.define('Mobile.controller.Mail', {
             s += comma + FirstName + " " + LastName;
             comma = ", ";
         });
-        this.getRecipients().setValue(s);
+        this.getRecipients().setHtml(s);
         this.getMailNav().pop();
     },
     onPost: function(button, e, eOpts) {
@@ -71019,7 +71015,7 @@ Ext.application({
         'RegisterPanel',
         'ComposePanel',
         'ManageNav',
-        null
+        'RecurrentPanel'
     ],
     controllers: [
         'Account',
@@ -71041,7 +71037,7 @@ Ext.application({
         ReminDoo.deviceType = -1;
         ReminDooInit();
         var me = this;
-        ReminDoo.Version = 50;
+        ReminDoo.Version = 51;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
