@@ -1,4 +1,4 @@
-function _08b8563849a2f0fd9e9faaf628f684171d11ec06(){};function _44d35595e9687c57a8de5707915a60eb457bfe1d(){};//@tag foundation,core
+//@tag foundation,core
 //@define Ext
 /**
  * @class Ext
@@ -16913,7 +16913,7 @@ Ext.define('Ext.util.Format', {
                     if (Ext.os.is.Android && Ext.os.version.isLessThan("3.0")) {
                         /**
                          * This code is modified from the following source: <https://github.com/csnover/js-iso8601>
-                         * � 2011 Colin Snover <http://zetafleet.com>
+                         * © 2011 Colin Snover <http://zetafleet.com>
                          * Released under MIT license.
                          */
                         var potentialUndefinedKeys = [
@@ -16936,7 +16936,7 @@ Ext.define('Ext.util.Format', {
                         // 6 ss (optional)
                         // 7 msec (optional)
                         // 8 Z (optional)
-                        // 9 � (optional)
+                        // 9 ± (optional)
                         // 10 tzHH (optional)
                         // 11 tzmm (optional)
                         if ((dateParsed = /^(\d{4}|[+\-]\d{6})(?:-(\d{2})(?:-(\d{2}))?)?(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{3}))?)?(?:(Z)|([+\-])(\d{2})(?::(\d{2}))?)?)?$/.exec(value))) {
@@ -68390,7 +68390,7 @@ Ext.define('Mobile.view.ManageNav', {
                                 ui: 'action',
                                 iconAlign: 'right',
                                 iconCls: 'logoff',
-                                text: '?????'
+                                text: 'ניתוק'
                             },
                             {
                                 xtype: 'button',
@@ -68398,7 +68398,7 @@ Ext.define('Mobile.view.ManageNav', {
                                 ui: 'action',
                                 iconAlign: 'right',
                                 iconCls: 'add',
-                                text: '????? '
+                                text: 'קישור '
                             },
                             {
                                 xtype: 'button',
@@ -68406,7 +68406,7 @@ Ext.define('Mobile.view.ManageNav', {
                                 ui: 'action',
                                 iconAlign: 'right',
                                 iconCls: 'switch',
-                                text: '?????'
+                                text: 'החלפה'
                             }
                         ]
                     }
@@ -68668,52 +68668,52 @@ Ext.define('Mobile.view.EventForm', {
                     {
                         xtype: 'textfield',
                         clearIcon: false,
-                        label: '????',
+                        label: 'תאור',
                         name: 'Name'
                     },
                     {
                         xtype: 'checkboxfield',
-                        label: '??? ???',
+                        label: 'יום שלם',
                         name: 'isDay'
                     },
                     {
                         xtype: 'datepickerfield',
-                        label: '?????',
+                        label: 'התחלה',
                         name: 'StartTime',
                         dateFormat: 'H:i'
                     },
                     {
                         xtype: 'datepickerfield',
-                        label: '????',
+                        label: 'סיום',
                         name: 'EndTime',
                         dateFormat: 'H:i'
                     },
                     {
                         xtype: 'textfield',
                         clearIcon: false,
-                        label: '?????',
+                        label: 'מיקום',
                         name: 'Location'
                     },
                     {
                         xtype: 'textfield',
                         clearIcon: false,
-                        label: '???????',
+                        label: 'משתתפים',
                         name: 'Participants'
                     },
                     {
                         xtype: 'textareafield',
                         clearIcon: false,
-                        label: '?????',
+                        label: 'פרטים',
                         name: 'Description'
                     },
                     {
                         xtype: 'checkboxfield',
-                        label: '????',
+                        label: 'נסתר',
                         name: 'Hidden'
                     },
                     {
                         xtype: 'checkboxfield',
-                        label: '???? ?????',
+                        label: 'חובת אישור',
                         name: 'Confirmation'
                     },
                     {
@@ -68733,7 +68733,7 @@ Ext.define('Mobile.view.EventForm', {
                     {
                         xtype: 'button',
                         itemId: 'event-save',
-                        text: '????'
+                        text: 'שמור'
                     }
                 ]
             }
@@ -68941,7 +68941,7 @@ Ext.define('Mobile.view.EventNav', {
                             '    </tpl>',
                             '    ',
                             '    <tpl if="isDay">',
-                            '       <div style="font-weight:bold;font-size:12px;display:inline">?? ????</div>',
+                            '       <div style="font-weight:bold;font-size:12px;display:inline">כל היום</div>',
                             '    </tpl>',
                             '',
                             '    ',
@@ -68952,7 +68952,7 @@ Ext.define('Mobile.view.EventNav', {
                             '    <div style="font-size:16px;display:inline">{Name}</div>',
                             '    ',
                             '    <tpl if="Location">',
-                            '        <div style="font-size:12px;">?????:{Location}</div>',
+                            '        <div style="font-size:12px;">מיקום:{Location}</div>',
                             '    </tpl>',
                             '    <tpl if="Confirmation">',
                             '        &#160;-&#160;',
@@ -69139,8 +69139,8 @@ Ext.define('Mobile.view.NewEventForm', {
                         'minute'
                     ],
                     //ampm : false,
-                    cancelButton: '?????',
-                    doneButton: '?????',
+                    cancelButton: 'ביטול',
+                    doneButton: 'אישור',
                     listeners: {
                         change: function(picker, value) {
                             ReminDoo.getController("Event").onStartChange(value);
@@ -69165,8 +69165,8 @@ Ext.define('Mobile.view.NewEventForm', {
                         'minute'
                     ],
                     ampm: false,
-                    cancelButton: '?????',
-                    doneButton: '?????'
+                    cancelButton: 'ביטול',
+                    doneButton: 'אישור'
                 },
                 dateTimeFormat: 'H:i',
                 dateFormat: 'H:i',
@@ -69309,14 +69309,14 @@ Ext.define('Mobile.view.RecurrentPanel', {
             {
                 xtype: 'label',
                 cls: 'right',
-                html: '?? ????',
+                html: 'שם ארוע',
                 style: 'font-size:large'
             },
             {
                 xtype: 'numberfield',
                 itemId: 'count',
                 inputCls: 'right',
-                label: '????',
+                label: 'כמות',
                 labelAlign: 'right',
                 labelCls: 'right',
                 value: 4
@@ -69324,18 +69324,18 @@ Ext.define('Mobile.view.RecurrentPanel', {
             {
                 xtype: 'selectfield',
                 itemId: 'step',
-                label: '?????',
+                label: 'מרווח',
                 labelAlign: 'right',
                 labelCls: 'right',
                 value: 7,
                 options: [
                     {
                         value: '1',
-                        text: '???'
+                        text: 'יום'
                     },
                     {
                         value: '7',
-                        text: '????'
+                        text: 'שבוע'
                     }
                 ]
             },
@@ -69354,7 +69354,7 @@ Ext.define('Mobile.view.RecurrentPanel', {
                             var step = sheet.down("#step").getValue();
                             sheet.fireEvent("select", count, step);
                         },
-                        text: '????'
+                        text: 'עדכן'
                     }
                 ]
             }
@@ -69591,7 +69591,7 @@ Ext.define('Mobile.controller.Event', {
         var nav = this.getEventNav();
         var form = this.getNewEventForm();
         var values = form.getValues();
-        Ext.Msg.confirm("????? ?????", values.Name, function(btn) {
+        Ext.Msg.confirm("אישור מחיקה", values.Name, function(btn) {
             if (btn == "yes") {
                 ReminDoo.mask();
                 ReminDoo.post("DeleteEvent", values, function(res) {
@@ -69610,7 +69610,7 @@ Ext.define('Mobile.controller.Event', {
         var values = form.getValues();
         var p = this.getRecurrentPanel();
         nav.push(p);
-        nav.getNavigationBar().setTitle("?????");
+        nav.getNavigationBar().setTitle("שכפול");
         p.down("label").setHtml(values.Name);
         p.on("select", function(count, step) {
             Ext.apply(values, {
@@ -70070,8 +70070,8 @@ Ext.define('Mobile.view.VoiceMailMessagePanel', {
                     var p = button.up("formpanel");
                 },
                 /*
-                    Ext.Msg.confirm("?????",
-                    "???????",
+                    Ext.Msg.confirm("אישור",
+                    "להשמיע?",
                     function(btn) {
                     if (btn=="yes") {audio.play();}
                     }
@@ -70081,7 +70081,7 @@ Ext.define('Mobile.view.VoiceMailMessagePanel', {
                 hidden: true,
                 itemId: 'btn-play',
                 margin: '0 50 0 50',
-                text: '????'
+                text: 'השמע'
             }
         ]
     }
@@ -70274,7 +70274,7 @@ Ext.define('Mobile.controller.VoiceMail', {
         p.setRecord(record);
         var IdRec = record.get("IdRec");
         var url = ReminDoo.makeVoiceMessageURL(IdRec);
-        var audio = "<audio id='myplayer' preload='auto' src='" + url + "' controls></audio>" + "<div>" + "<button style='font-size:16px' onclick='playPause()'>????</button>" + "</div>" + "<script>" + "var myAudio = document.getElementById('myplayer'); " + "function playPause() {if (myAudio.paused) myAudio.play(); else myAudio.pause(); } " + "</script>";
+        var audio = "<audio id='myplayer' preload='auto' src='" + url + "' controls></audio>" + "<div>" + "<button style='font-size:16px' onclick='playPause()'>השמע</button>" + "</div>" + "<script>" + "var myAudio = document.getElementById('myplayer'); " + "function playPause() {if (myAudio.paused) myAudio.play(); else myAudio.pause(); } " + "</script>";
         var html = '<iframe width="90%" height="120px" type="text/html"' + 'srcdoc="' + audio + '"' + ' frameborder="0">' + '</iframe>';
         var f = this.getAudioiframe();
         f.setHtml(html);
@@ -70416,7 +70416,7 @@ Ext.define('Mobile.view.CameraSource', {
                 hidden: true,
                 itemId: 'album',
                 ui: 'action',
-                text: '?????'
+                text: 'אלבום'
             },
             {
                 xtype: 'button',
@@ -70434,7 +70434,7 @@ Ext.define('Mobile.view.CameraSource', {
                     button.up("actionsheet").hide();
                 },
                 ui: 'action',
-                text: '?????'
+                text: 'ביטול'
             }
         ],
         listeners: [
@@ -70698,7 +70698,7 @@ Ext.define('Mobile.view.GalleryPanel', {
                 itemId: 'body',
                 clearIcon: false,
                 inputCls: 'right',
-                label: '??',
+                label: 'שם',
                 labelAlign: 'right',
                 labelCls: 'right',
                 name: 'Body'
@@ -71050,7 +71050,7 @@ Ext.define('Mobile.view.MailNav', {
                     itemId: 'post-button',
                     iconAlign: 'right',
                     iconCls: 'alert',
-                    text: '???'
+                    text: 'שלח'
                 },
                 {
                     xtype: 'button',
@@ -71106,7 +71106,7 @@ Ext.define('Mobile.view.SelectRecipients', {
     extend: Ext.Panel,
     alias: 'widget.selectrecipients',
     config: {
-        title: '?????? ??????',
+        title: 'נמענים להודעה',
         itemId: 'panel-recipients',
         layout: 'vbox',
         items: [
@@ -71145,7 +71145,7 @@ Ext.define('Mobile.view.SelectRecipients', {
                     {
                         xtype: 'button',
                         itemId: 'select-recipients-button',
-                        text: '???'
+                        text: 'בחר'
                     }
                 ]
             }
@@ -71192,7 +71192,7 @@ Ext.define('Mobile.view.ComposePanel', {
                         xtype: 'label',
                         flex: 1,
                         cls: 'right',
-                        html: '??????',
+                        html: 'נמענים',
                         itemId: 'recipients'
                     }
                 ]
@@ -71205,7 +71205,7 @@ Ext.define('Mobile.view.ComposePanel', {
                 style: 'direction:rtl',
                 clearIcon: false,
                 labelAlign: 'top',
-                placeHolder: '????'
+                placeHolder: 'תוכן'
             }
         ]
     }
@@ -71310,7 +71310,7 @@ Ext.define('Mobile.controller.Mail', {
         if (toList.length === 0) {
             Ext.Msg.alert("", ReminDoo.T("SelectRecipients"));
         }
-        //"?? ????? ??????");
+        //"יש לבחור נמענים");
         else if (Ext.isEmpty(body)) {
             Ext.Msg.alert("", ReminDoo.T("EnterContent"));
         } else {
@@ -71499,7 +71499,7 @@ Ext.define('Mobile.view.InMessageItem', {
                         },
                         margin: 2,
                         ui: 'decline',
-                        text: '??'
+                        text: 'לא'
                     },
                     {
                         xtype: 'button',
@@ -71509,7 +71509,7 @@ Ext.define('Mobile.view.InMessageItem', {
                         },
                         margin: 2,
                         ui: 'confirm',
-                        text: '??'
+                        text: 'כן'
                     },
                     {
                         xtype: 'spacer'
@@ -71523,7 +71523,7 @@ Ext.define('Mobile.view.InMessageItem', {
                         itemId: 'confirm',
                         margin: '2 6 2 2 ',
                         ui: 'action',
-                        text: '?????'
+                        text: 'קראתי'
                     }
                 ]
             }
