@@ -71629,7 +71629,7 @@ Ext.application({
         ReminDoo.deviceType = -1;
         ReminDooInit();
         var me = this;
-        ReminDoo.Version = 55;
+        ReminDoo.Version = 56;
         console.log("version:" + ReminDoo.Version);
         ReminDoo.getController = function(name) {
             return me.getController(name);
@@ -71880,19 +71880,21 @@ Ext.application({
             }
         });
         // fixOverflowChangedIssue: function()
-        if (Ext.browser.is.WebKit) {
-            console.info(this.$className + ': Fix a Sencha Touch Bug (TOUCH-5716 / Scrolling Issues in Google Chrome v43+)');
-            Ext.override(Ext.util.SizeMonitor, {
-                constructor: function(config) {
-                    var namespace = Ext.util.sizemonitor;
-                    return new namespace.Scroll(config);
-                }
-            });
-            Ext.override(Ext.util.PaintMonitor, {
-                constructor: function(config) {
-                    return new Ext.util.paintmonitor.CssAnimation(config);
-                }
-            });
+        if (document.location.protocol != "file:") {
+            if (Ext.browser.is.WebKit) {
+                console.info(this.$className + ': Fix a Sencha Touch Bug (TOUCH-5716 / Scrolling Issues in Google Chrome v43+)');
+                Ext.override(Ext.util.SizeMonitor, {
+                    constructor: function(config) {
+                        var namespace = Ext.util.sizemonitor;
+                        return new namespace.Scroll(config);
+                    }
+                });
+                Ext.override(Ext.util.PaintMonitor, {
+                    constructor: function(config) {
+                        return new Ext.util.paintmonitor.CssAnimation(config);
+                    }
+                });
+            }
         }
         ///////////////////////////////////////
         Ext.create('Mobile.view.Welcome', {
